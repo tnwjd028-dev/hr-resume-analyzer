@@ -649,101 +649,101 @@
       font-size: 13.5px;
     }
 
-    /* 사이드바 레이아웃 추가 */
-    .app-layout-wrapper {
-      display: grid;
-      grid-template-columns: 280px 1fr;
-      gap: 25px;
+    /* 3대 독립 대형 탭 및 전체 폭 레이아웃 최적화 */
+    .app-main-content {
       margin-top: 24px;
-      align-items: start;
+      width: 100%;
     }
 
-    .sidebar-history {
+    .history-list-page {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    
+    .history-card-page {
       background: #FFFFFF;
-      border-radius: 16px;
       border: 1px solid #E5E8EB;
-      padding: 20px;
-    }
-
-    .sidebar-title {
-      font-size: 13.5px;
-      font-weight: 700;
-      color: #333D4B;
-      margin-bottom: 15px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .history-list {
+      border-radius: 16px;
+      padding: 22px;
+      cursor: pointer;
+      transition: all 0.25s ease;
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      max-height: 600px;
-      overflow-y: auto;
+      justify-content: space-between;
+      min-height: 160px;
+      position: relative;
     }
 
-    .history-item {
-      background: #F9FAFB;
-      border: 1px solid #E5E8EB;
-      border-radius: 10px;
-      padding: 12px;
-      cursor: pointer;
-      transition: all 0.2s ease;
+    .history-card-page:hover {
+      border-color: #0050FF;
+      box-shadow: 0 8px 24px rgba(0, 80, 255, 0.08);
+      transform: translateY(-2px);
+    }
+
+    .history-card-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
+      margin-bottom: 12px;
+      gap: 10px;
     }
 
-    .history-item:hover {
-      border-color: #0050FF;
-      background: #F2F8FF;
-    }
-
-    .history-item.active {
-      border-color: #0050FF;
-      background: #E8F3FF;
-    }
-
-    .history-info {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      width: calc(100% - 24px);
-    }
-
-    .history-name {
-      font-size: 12.5px;
-      font-weight: 600;
+    .history-card-title {
+      font-size: 15px;
+      font-weight: 700;
       color: #191F28;
-      word-break: break-all;
       line-height: 1.4;
+      word-break: break-all;
     }
 
-    .history-date {
-      font-size: 10.5px;
+    .history-card-date {
+      font-size: 11px;
       color: #8B95A1;
+      margin-top: auto;
     }
 
-    .btn-delete-history {
-      background: none;
+    .history-card-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+      border-top: 1px solid #F2F4F6;
+      padding-top: 12px;
+    }
+
+    .btn-card-action {
+      background: #F2F4F6;
+      color: #4E5968;
       border: none;
-      color: #8B95A1;
-      font-size: 14px;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 11.5px;
+      font-weight: 600;
       cursor: pointer;
-      transition: color 0.2s ease;
-      padding: 2px 5px;
+      transition: all 0.2s ease;
     }
 
-    .btn-delete-history:hover {
+    .btn-card-action:hover {
+      background: #E5E8EB;
+      color: #333D4B;
+    }
+
+    .btn-card-delete {
+      background: #FFF0F0;
       color: #FF4D4F;
     }
 
+    .btn-card-delete:hover {
+      background: #FFD8D8;
+    }
+
     .empty-history {
-      font-size: 12px;
+      grid-column: 1 / -1;
+      font-size: 13.5px;
       color: #8B95A1;
       text-align: center;
-      padding: 30px 10px;
+      padding: 60px 20px;
       line-height: 1.5;
     }
 
@@ -806,6 +806,9 @@
 
     <!-- 탭 내비게이션 바 -->
     <div class="tabs-navigation">
+      <button class="tab-btn" id="tabHistoryBtn">
+        📋 저장된 직무 공고
+      </button>
       <button class="tab-btn active" id="tabMatrixBtn">
         📊 다중 지원자 비교 매트릭스
       </button>
@@ -814,25 +817,29 @@
       </button>
     </div>
 
-    <!-- 앱 레이아웃 래퍼 분기 -->
-    <div class="app-layout-wrapper">
+    <!-- 앱 메인 콘텐츠 래퍼 -->
+    <div class="app-main-content">
       
-      <!-- Left Sidebar: 직무 히스토리 -->
-      <div class="sidebar-history">
-        <div class="sidebar-title">📋 저장된 직무 공고 목록</div>
-        <div class="history-list" id="historyList">
-          <div class="empty-history">저장된 채용 공고가 없습니다.</div>
+      <!-- ======================================================================== -->
+      <!-- 탭 0: 저장된 직무 공고 목록 뷰 -->
+      <!-- ======================================================================== -->
+      <div class="tab-content" id="viewHistory">
+        <div class="card" style="min-height: 500px; padding: 30px;">
+          <div style="border-bottom: 1px solid #F2F4F6; padding-bottom: 15px; margin-bottom: 20px;">
+            <h2 style="margin: 0; font-size: 17px; color: #191F28;">📋 저장된 직무 공고 목록</h2>
+            <p style="font-size: 13px; color: #8B95A1; margin-top: 4px;">저장된 채용 요건과 분석 결과를 관리하고 불러올 수 있습니다.</p>
+          </div>
+          <div class="history-list-page" id="historyPageList">
+            <div class="empty-history">저장된 채용 공고가 없습니다.</div>
+          </div>
         </div>
       </div>
 
-      <!-- Right Main Content -->
-      <div class="app-main-content">
-
-    <!-- ======================================================================== -->
-    <!-- 탭 1: 다중 지원자 비교 매트릭스 뷰 -->
-    <!-- ======================================================================== -->
-    <div class="tab-content active" id="viewMatrix">
-      <div class="grid-matrix">
+      <!-- ======================================================================== -->
+      <!-- 탭 1: 다중 지원자 비교 매트릭스 뷰 -->
+      <!-- ======================================================================== -->
+      <div class="tab-content active" id="viewMatrix">
+        <div class="grid-matrix">
         
         <!-- Left: Form -->
         <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; gap: 20px;">
@@ -1081,20 +1088,24 @@
     </div>
 
     </div> <!-- .app-main-content -->
-  </div> <!-- .app-layout-wrapper -->
 </div> <!-- .container -->
 
   <script>
     // ========================================================================
     // A. 공통 탭 스위칭 및 상태 관리 (LocalStorage / 히스토리)
     // ========================================================================
+    const tabHistoryBtn = document.getElementById('tabHistoryBtn');
     const tabMatrixBtn = document.getElementById('tabMatrixBtn');
     const tabSingleBtn = document.getElementById('tabSingleBtn');
+    
+    const viewHistory = document.getElementById('viewHistory');
     const viewMatrix = document.getElementById('viewMatrix');
     const viewSingle = document.getElementById('viewSingle');
 
     let currentActiveJobId = null;
-    const historyList = document.getElementById('historyList');
+    let isSavedHistoryMode = false; // 신규 분석 vs 과거 저장본 조회 구분 플래그
+    
+    const historyPageList = document.getElementById('historyPageList');
     const pdfBtnMatrix = document.getElementById('pdfBtnMatrix');
     const pdfBtnSingle = document.getElementById('pdfBtnSingle');
 
@@ -1106,23 +1117,55 @@
       localStorage.setItem('shield_resume_jobs', JSON.stringify(jobs));
     }
 
-    function renderSidebarHistory() {
+    // 사이드바 대신 공고 탭에 그리드 카드로 렌더링하는 함수
+    function renderHistoryPage() {
       const jobs = loadSavedJobs();
+      if (!historyPageList) return;
+      
       if (jobs.length === 0) {
-        historyList.innerHTML = `<div class="empty-history">저장된 채용 공고가 없습니다.</div>`;
+        historyPageList.innerHTML = `<div class="empty-history">저장된 채용 공고가 없습니다.</div>`;
         return;
       }
 
-      historyList.innerHTML = jobs.map(job => `
-        <div class="history-item ${currentActiveJobId === job.id ? 'active' : ''}" onclick="loadJobFromHistory('${job.id}')">
-          <div class="history-info">
-            <span class="history-name" title="${job.title}">${job.title}</span>
-            <span class="history-date">${job.createdAt}</span>
+      historyPageList.innerHTML = jobs.map(job => `
+        <div class="history-card-page" onclick="loadJobFromHistory('${job.id}')" style="${currentActiveJobId === job.id ? 'border-color: #0050FF; background: #F8FAFF; box-shadow: 0 4px 16px rgba(0, 80, 255, 0.05);' : ''}">
+          <div class="history-card-header">
+            <span class="history-card-title">${job.title}</span>
           </div>
-          <button class="btn-delete-history" onclick="deleteJobFromHistory(event, '${job.id}')">×</button>
+          <span class="history-card-date">저장일: ${job.createdAt}</span>
+          <div class="history-card-actions">
+            <button class="btn-card-action" onclick="editJobTitle(event, '${job.id}')">✏️ 제목 수정</button>
+            <button class="btn-card-action btn-card-delete" onclick="deleteJobFromHistory(event, '${job.id}')">삭제</button>
+          </div>
         </div>
       `).join('');
     }
+
+    // 제목 수정 기능 (prompt 입력 이용)
+    window.editJobTitle = function(e, jobId) {
+      e.stopPropagation();
+      let jobs = loadSavedJobs();
+      const jobIndex = jobs.findIndex(j => j.id === jobId);
+      if (jobIndex === -1) return;
+
+      const newTitle = prompt("수정할 공고 제목을 입력하세요:", jobs[jobIndex].title);
+      if (newTitle === null) return; // 취소 버튼
+
+      const trimmed = newTitle.trim();
+      if (!trimmed) {
+        alert("공고 제목은 빈 칸으로 설정할 수 없습니다.");
+        return;
+      }
+
+      jobs[jobIndex].title = trimmed;
+      saveJobs(jobs);
+      renderHistoryPage();
+      
+      // 만약 현재 활성화된 로드 직무라면 타이틀 동기화
+      if (currentActiveJobId === jobId) {
+        renderHistoryPage();
+      }
+    };
 
     window.deleteJobFromHistory = function(e, jobId) {
       e.stopPropagation();
@@ -1134,25 +1177,45 @@
       
       if (currentActiveJobId === jobId) {
         currentActiveJobId = null;
+        isSavedHistoryMode = false;
         resetAllUI(false);
       }
-      renderSidebarHistory();
+      renderHistoryPage();
     };
 
-    // 초기 화면 로드 시 히스토리 렌더링
-    renderSidebarHistory();
+    // 초기 화면 로드 시 히스토리 카드 목록 렌더링
+    renderHistoryPage();
+
+    tabHistoryBtn.addEventListener('click', () => {
+      tabHistoryBtn.classList.add('active');
+      tabMatrixBtn.classList.remove('active');
+      tabSingleBtn.classList.remove('active');
+      
+      viewHistory.classList.add('active');
+      viewMatrix.classList.remove('active');
+      viewSingle.classList.remove('active');
+      
+      // 히스토리 탭이 활성화될 때 목록 최신화
+      renderHistoryPage();
+    });
 
     tabMatrixBtn.addEventListener('click', () => {
       tabMatrixBtn.classList.add('active');
+      tabHistoryBtn.classList.remove('active');
       tabSingleBtn.classList.remove('active');
+      
       viewMatrix.classList.add('active');
+      viewHistory.classList.remove('active');
       viewSingle.classList.remove('active');
     });
 
     tabSingleBtn.addEventListener('click', () => {
       tabSingleBtn.classList.add('active');
+      tabHistoryBtn.classList.remove('active');
       tabMatrixBtn.classList.remove('active');
+      
       viewSingle.classList.add('active');
+      viewHistory.classList.remove('active');
       viewMatrix.classList.remove('active');
     });
 
@@ -1702,17 +1765,18 @@
       pdfBtnSingle.style.display = "none";
 
       currentActiveJobId = null;
-      renderSidebarHistory();
+      renderHistoryPage();
     }
 
-    // 히스토리 항목 선택 시 전체 상태 로드
+    // 히스토리 항목 선택 시 전체 상태 로드 후 매트릭스 탭으로 강제 이동
     window.loadJobFromHistory = function(jobId) {
       const jobs = loadSavedJobs();
       const job = jobs.find(j => j.id === jobId);
       if (!job) return;
 
       currentActiveJobId = jobId;
-      renderSidebarHistory();
+      isSavedHistoryMode = true; // 과거 조회 모드 확정
+      renderHistoryPage();
 
       // 폼 연동 복원
       jdDutiesMatrix.value = job.duties || "";
@@ -1778,6 +1842,9 @@
         activeSingleDashboard.style.display = "none";
         pdfBtnSingle.style.display = "none";
       }
+
+      // 📊 다중 지원자 비교 매트릭스 탭으로 강제 이동
+      tabMatrixBtn.click();
     };
 
     // 히스토리 항목 내 상세분석 트리거 복원
@@ -1806,24 +1873,74 @@
       renderSingleReport(mappedSingle);
     };
 
-    // 초기화 분기 함수
+    // 초기화 분기 함수 (Case A / Case B 버그 수정)
     const handleReset = () => {
-      const duty = jdDutiesMatrix.value.trim() || jdDutiesSingle.value.trim();
-      if (!duty) {
+      // Case B: 과거에 이미 저장된 공고를 불러와서 보던 중일 때
+      if (isSavedHistoryMode) {
+        // 안내창 없이 즉시 청소
         resetAllUI(false);
+        isSavedHistoryMode = false;
+        currentActiveJobId = null;
+        tabMatrixBtn.click(); // 홈으로 이동
         return;
       }
 
-      if (confirm("현재 분석 중인 직무 요건을 저장하시겠습니까?\n\n('확인'을 누르면 히스토리에 저장 후 초기화하며, '취소'를 누르면 저장하지 않고 즉시 지웁니다.)")) {
+      // Case A: 새로 분석을 작성하거나 설정하던 중일 때
+      const duty = jdDutiesMatrix.value.trim() || jdDutiesSingle.value.trim();
+      if (!duty) {
+        // 아무것도 없으면 바로 완전 초기화 후 홈 이동
+        resetAllUI(false);
+        tabMatrixBtn.click();
+        return;
+      }
+
+      if (confirm("현재 설정한 직무 요건을 히스토리에 저장하시겠습니까?\n\n('확인'을 누르면 신규 저장 후 초기화하며, '취소'를 누르면 저장하지 않고 전부 삭제합니다.)")) {
         resetAllUI(true);
       } else {
         resetAllUI(false);
       }
+      tabMatrixBtn.click(); // 홈으로 이동
     };
 
     // 초기화 버튼 이벤트 바인딩
     document.getElementById('resetBtnMatrix').addEventListener('click', handleReset);
     document.getElementById('resetBtnSingle').addEventListener('click', handleReset);
+
+    // 사용자가 입력 요건값을 직접 타이핑하여 수정 시, '신규 작성 모드'로 상태 실시간 복구
+    const jdInputs = [
+      document.getElementById('jdDutiesMatrix'),
+      document.getElementById('jdRequirementsMatrix'),
+      document.getElementById('jdPreferencesMatrix'),
+      document.getElementById('jdExpYearsMatrix'),
+      document.getElementById('jdAgeLimitMatrix'),
+      document.getElementById('jdDutiesSingle'),
+      document.getElementById('jdRequirementsSingle'),
+      document.getElementById('jdPreferencesSingle'),
+      document.getElementById('jdExpYearsSingle'),
+      document.getElementById('jdAgeLimitSingle')
+    ];
+
+    jdInputs.forEach(input => {
+      if (input) {
+        input.addEventListener('input', () => {
+          isSavedHistoryMode = false;
+          currentActiveJobId = null;
+          renderHistoryPage(); // 선택 상태 스타일 갱신
+        });
+      }
+    });
+
+    // 샘플 불러오기 시에도 신규 모드 지정
+    document.getElementById('loadSampleJdBtnMatrix').addEventListener('click', () => {
+      isSavedHistoryMode = false;
+      currentActiveJobId = null;
+      renderHistoryPage();
+    });
+    document.getElementById('loadSampleJdBtnSingle').addEventListener('click', () => {
+      isSavedHistoryMode = false;
+      currentActiveJobId = null;
+      renderHistoryPage();
+    });
 
 
     // ========================================================================
