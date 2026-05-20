@@ -9,6 +9,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Outfit:wght@500;600;700;900&display=swap" rel="stylesheet">
   
+  <!-- PDF Export libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  
   <style>
     * {
       box-sizing: border-box;
@@ -644,6 +648,147 @@
       color: #8B95A1;
       font-size: 13.5px;
     }
+
+    /* 사이드바 레이아웃 추가 */
+    .app-layout-wrapper {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 25px;
+      margin-top: 24px;
+      align-items: start;
+    }
+
+    .sidebar-history {
+      background: #FFFFFF;
+      border-radius: 16px;
+      border: 1px solid #E5E8EB;
+      padding: 20px;
+    }
+
+    .sidebar-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #333D4B;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+
+    .history-item {
+      background: #F9FAFB;
+      border: 1px solid #E5E8EB;
+      border-radius: 10px;
+      padding: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .history-item:hover {
+      border-color: #0050FF;
+      background: #F2F8FF;
+    }
+
+    .history-item.active {
+      border-color: #0050FF;
+      background: #E8F3FF;
+    }
+
+    .history-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      width: calc(100% - 24px);
+    }
+
+    .history-name {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #191F28;
+      word-break: break-all;
+      line-height: 1.4;
+    }
+
+    .history-date {
+      font-size: 10.5px;
+      color: #8B95A1;
+    }
+
+    .btn-delete-history {
+      background: none;
+      border: none;
+      color: #8B95A1;
+      font-size: 14px;
+      cursor: pointer;
+      transition: color 0.2s ease;
+      padding: 2px 5px;
+    }
+
+    .btn-delete-history:hover {
+      color: #FF4D4F;
+    }
+
+    .empty-history {
+      font-size: 12px;
+      color: #8B95A1;
+      text-align: center;
+      padding: 30px 10px;
+      line-height: 1.5;
+    }
+
+    /* PDF 저장 버튼 및 초기화 버튼 스타일 */
+    .btn-pdf {
+      background: #F2F4F6;
+      color: #4E5968;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-pdf:hover {
+      background: #E5E8EB;
+      color: #333D4B;
+    }
+
+    .btn-reset {
+      background: #FFF0F0;
+      color: #FF4D4F;
+      border: 1px solid #FFD8D8;
+      border-radius: 12px;
+      width: 100%;
+      padding: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .btn-reset:hover {
+      background: #FFD8D8;
+    }
   </style>
 </head>
 <body>
@@ -655,7 +800,7 @@
         <p>인사기획팀 내부용 • 로컬 개인정보 마스킹 및 다중 비교/단일 심층 분석 관리 도구</p>
       </div>
       <div style="font-size: 11px; color: #8B95A1; text-align: right;">
-        Local 전처리 보안 시스템 작동 중<br><strong>보안 안심 등급 v2.5</strong>
+         Local 전처리 보안 시스템 작동 중<br><strong>보안 안심 등급 v2.5</strong>
       </div>
     </header>
 
@@ -668,6 +813,20 @@
         🔍 단일 지원자 심층 분석 (ShieldResume)
       </button>
     </div>
+
+    <!-- 앱 레이아웃 래퍼 분기 -->
+    <div class="app-layout-wrapper">
+      
+      <!-- Left Sidebar: 직무 히스토리 -->
+      <div class="sidebar-history">
+        <div class="sidebar-title">📋 저장된 직무 공고 목록</div>
+        <div class="history-list" id="historyList">
+          <div class="empty-history">저장된 채용 공고가 없습니다.</div>
+        </div>
+      </div>
+
+      <!-- Right Main Content -->
+      <div class="app-main-content">
 
     <!-- ======================================================================== -->
     <!-- 탭 1: 다중 지원자 비교 매트릭스 뷰 -->
@@ -721,11 +880,15 @@
           </div>
 
           <button class="btn" id="uploadBtnMatrix" disabled>⚡ 매트릭스 비교 시작</button>
+          <button class="btn-reset" id="resetBtnMatrix">🔄 분석 초기화</button>
         </div>
 
         <!-- Right: Matrix Table -->
-        <div class="matrix-box">
-          <h2>지원자 적합성 비교 매트릭스</h2>
+        <div class="matrix-box" id="matrixResultReportBlock">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h2 style="margin: 0;">지원자 적합성 비교 매트릭스</h2>
+            <button class="btn-pdf" id="pdfBtnMatrix" style="display: none;"><span style="font-size:14px;">📥</span> PDF 결과 저장</button>
+          </div>
           
           <div class="loading" id="loadingMatrix">
             <div class="spinner"></div>
@@ -813,14 +976,18 @@
 
           <button class="btn" id="uploadBtnSingle" disabled>🔍 단일 심층 분석 실행</button>
           
-          <div style="border-top:1px solid #E5E8EB; padding-top:15px; text-align:center;">
+          <div style="border-top:1px solid #E5E8EB; padding-top:15px; text-align:center; display: flex; flex-direction: column; gap: 8px;">
             <button class="btn-sample" id="loadDemoSingleBtn" style="font-size:13px;">💡 모의 가상 데모 결과 보기</button>
+            <button class="btn-reset" id="resetBtnSingle" style="margin-top:0;">🔄 분석 초기화</button>
           </div>
         </div>
 
         <!-- Right: Detailed Dashboard -->
-        <div class="card" style="min-height: 500px;">
-          <h2>커리어 심층 분석 리포트</h2>
+        <div class="card" style="min-height: 500px;" id="singleResultReportBlock">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #F2F4F6; padding-bottom: 10px;">
+            <h2 style="margin: 0;">커리어 심층 분석 리포트</h2>
+            <button class="btn-pdf" id="pdfBtnSingle" style="display: none;"><span style="font-size:14px;">📥</span> PDF 결과 저장</button>
+          </div>
           
           <!-- Loading Single -->
           <div class="loading" id="loadingSingle">
@@ -913,16 +1080,67 @@
       </div>
     </div>
 
-  </div>
+    </div> <!-- .app-main-content -->
+  </div> <!-- .app-layout-wrapper -->
+</div> <!-- .container -->
 
   <script>
     // ========================================================================
-    // A. 공통 탭 스위칭 로직
+    // A. 공통 탭 스위칭 및 상태 관리 (LocalStorage / 히스토리)
     // ========================================================================
     const tabMatrixBtn = document.getElementById('tabMatrixBtn');
     const tabSingleBtn = document.getElementById('tabSingleBtn');
     const viewMatrix = document.getElementById('viewMatrix');
     const viewSingle = document.getElementById('viewSingle');
+
+    let currentActiveJobId = null;
+    const historyList = document.getElementById('historyList');
+    const pdfBtnMatrix = document.getElementById('pdfBtnMatrix');
+    const pdfBtnSingle = document.getElementById('pdfBtnSingle');
+
+    function loadSavedJobs() {
+      return JSON.parse(localStorage.getItem('shield_resume_jobs') || '[]');
+    }
+
+    function saveJobs(jobs) {
+      localStorage.setItem('shield_resume_jobs', JSON.stringify(jobs));
+    }
+
+    function renderSidebarHistory() {
+      const jobs = loadSavedJobs();
+      if (jobs.length === 0) {
+        historyList.innerHTML = `<div class="empty-history">저장된 채용 공고가 없습니다.</div>`;
+        return;
+      }
+
+      historyList.innerHTML = jobs.map(job => `
+        <div class="history-item ${currentActiveJobId === job.id ? 'active' : ''}" onclick="loadJobFromHistory('${job.id}')">
+          <div class="history-info">
+            <span class="history-name" title="${job.title}">${job.title}</span>
+            <span class="history-date">${job.createdAt}</span>
+          </div>
+          <button class="btn-delete-history" onclick="deleteJobFromHistory(event, '${job.id}')">×</button>
+        </div>
+      `).join('');
+    }
+
+    window.deleteJobFromHistory = function(e, jobId) {
+      e.stopPropagation();
+      if (!confirm("이 채용 공고 히스토리를 삭제하시겠습니까?")) return;
+
+      let jobs = loadSavedJobs();
+      jobs = jobs.filter(job => job.id !== jobId);
+      saveJobs(jobs);
+      
+      if (currentActiveJobId === jobId) {
+        currentActiveJobId = null;
+        resetAllUI(false);
+      }
+      renderSidebarHistory();
+    };
+
+    // 초기 화면 로드 시 히스토리 렌더링
+    renderSidebarHistory();
 
     tabMatrixBtn.addEventListener('click', () => {
       tabMatrixBtn.classList.add('active');
@@ -1081,6 +1299,7 @@
             `;
             resultBodyMatrix.appendChild(tr);
           });
+          pdfBtnMatrix.style.display = "inline-flex";
         }
       } catch (err) {
         console.error(err);
@@ -1270,6 +1489,7 @@
     function renderSingleReport(data) {
       emptySingleState.style.display = "none";
       activeSingleDashboard.style.display = "flex";
+      pdfBtnSingle.style.display = "inline-flex";
 
       // 0. JD 매칭 정보
       document.getElementById('sMatchRate').textContent = data.match_rate || "0%";
@@ -1349,6 +1569,327 @@
         sQuestions.innerHTML = '<p style="font-size:12px; color:#8B95A1;">추천 질문이 생성되지 않았습니다.</p>';
       }
     }
+
+    // ========================================================================
+    // D. 직무 저장, 초기화 및 히스토리 데이터 맵핑
+    // ========================================================================
+    
+    // 폼과 결과를 초기화하는 핵심 헬퍼 함수
+    function resetAllUI(saveFirst = false) {
+      if (saveFirst) {
+        const duties = jdDutiesMatrix.value.trim() || jdDutiesSingle.value.trim() || "";
+        if (duties) {
+          const date = new Date();
+          const todayStr = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+          const title = duties.substring(0, 15) + (duties.length > 15 ? '...' : '');
+          
+          // A. 다중 매트릭스 결과 복원용 데이터 수집
+          const matrixResults = [];
+          const rows = document.querySelectorAll('#resultBodyMatrix tr');
+          rows.forEach(row => {
+            if (row.id === 'emptyRowMatrix') return;
+            const cells = row.querySelectorAll('td');
+            if (cells.length >= 6) {
+              const skills = [];
+              row.querySelectorAll('.badge-skill').forEach(badge => skills.push(badge.textContent));
+              matrixResults.push({
+                name: cells[0].textContent,
+                match_rate: row.querySelector('.badge').textContent,
+                total_experience: cells[2].textContent,
+                average_tenure: cells[3].textContent,
+                skills: skills,
+                summary: cells[5].textContent
+              });
+            }
+          });
+
+          // B. 단일 상세 결과 데이터 수집
+          let singleResult = null;
+          if (activeSingleDashboard.style.display !== 'none') {
+            const careerSummary = [];
+            document.querySelectorAll('#sTimeline .timeline-item').forEach(item => {
+              careerSummary.push({
+                company: item.querySelector('.timeline-company').textContent,
+                period: item.querySelector('.timeline-period').textContent,
+                role: item.querySelector('.timeline-role').textContent,
+                description: item.querySelector('.timeline-desc').textContent
+              });
+            });
+
+            const interviewQuestions = [];
+            document.querySelectorAll('#sQuestions .question-item').forEach(item => {
+              interviewQuestions.push(item.querySelector('.question-text').textContent);
+            });
+
+            const gapPeriods = [];
+            const gapBadges = document.querySelectorAll('#sGapMessage span');
+            gapBadges.forEach(badge => {
+              const text = badge.textContent;
+              const parts = text.split(' (');
+              if (parts.length === 2) {
+                gapPeriods.push({
+                  period: parts[0],
+                  duration: parts[1].replace(')', '')
+                });
+              }
+            });
+
+            singleResult = {
+              name: document.getElementById('sName').textContent,
+              age: document.getElementById('sAge').textContent,
+              location: document.getElementById('sLocation').textContent,
+              total_experience: document.getElementById('sTotalExp').textContent,
+              average_tenure: document.getElementById('sAverageTenure').textContent,
+              match_rate: document.getElementById('sMatchRate').textContent,
+              match_reason: document.getElementById('sMatchReason').textContent,
+              skills: Array.from(document.querySelectorAll('#sSkills .badge-skill')).map(b => b.textContent),
+              certifications: Array.from(document.querySelectorAll('#sCerts .badge-skill')).map(b => b.textContent),
+              career_summary: careerSummary,
+              interview_questions: interviewQuestions,
+              gap_periods: gapPeriods
+            };
+          }
+
+          const newJob = {
+            id: Date.now().toString(),
+            title: title,
+            duties: jdDutiesMatrix.value || jdDutiesSingle.value,
+            requirements: jdRequirementsMatrix.value || jdRequirementsSingle.value,
+            preferences: jdPreferencesMatrix.value || jdPreferencesSingle.value,
+            expYears: jdExpYearsMatrix.value || jdExpYearsSingle.value,
+            ageLimit: jdAgeLimitMatrix.value || jdAgeLimitSingle.value,
+            matrixResults: matrixResults,
+            singleResult: singleResult,
+            createdAt: todayStr
+          };
+
+          const jobs = loadSavedJobs();
+          jobs.unshift(newJob);
+          saveJobs(jobs);
+        }
+      }
+
+      // 입력 창 클리어
+      jdDutiesMatrix.value = "";
+      jdRequirementsMatrix.value = "";
+      jdPreferencesMatrix.value = "";
+      jdExpYearsMatrix.value = "";
+      jdAgeLimitMatrix.value = "";
+
+      jdDutiesSingle.value = "";
+      jdRequirementsSingle.value = "";
+      jdPreferencesSingle.value = "";
+      jdExpYearsSingle.value = "";
+      jdAgeLimitSingle.value = "";
+
+      // 파일 업로드 초기화
+      selectedMatrixFiles = [];
+      renderMatrixFileList();
+      removeSingleFile();
+
+      // 결과 영역 초기화
+      resultBodyMatrix.innerHTML = `
+        <tr id="emptyRowMatrix">
+          <td colspan="7" class="empty-state">
+            왼쪽 폼에 이력서를 등록하고 분석을 실행하면 실시간 대조 매트릭스 표가 렌더링됩니다.
+          </td>
+        </tr>
+      `;
+      pdfBtnMatrix.style.display = "none";
+
+      emptySingleState.style.display = "block";
+      activeSingleDashboard.style.display = "none";
+      pdfBtnSingle.style.display = "none";
+
+      currentActiveJobId = null;
+      renderSidebarHistory();
+    }
+
+    // 히스토리 항목 선택 시 전체 상태 로드
+    window.loadJobFromHistory = function(jobId) {
+      const jobs = loadSavedJobs();
+      const job = jobs.find(j => j.id === jobId);
+      if (!job) return;
+
+      currentActiveJobId = jobId;
+      renderSidebarHistory();
+
+      // 폼 연동 복원
+      jdDutiesMatrix.value = job.duties || "";
+      jdRequirementsMatrix.value = job.requirements || "";
+      jdPreferencesMatrix.value = job.preferences || "";
+      jdExpYearsMatrix.value = job.expYears || "";
+      jdAgeLimitMatrix.value = job.ageLimit || "";
+
+      jdDutiesSingle.value = job.duties || "";
+      jdRequirementsSingle.value = job.requirements || "";
+      jdPreferencesSingle.value = job.preferences || "";
+      jdExpYearsSingle.value = job.expYears || "";
+      jdAgeLimitSingle.value = job.ageLimit || "";
+
+      // 다중 비교 데이터 복원
+      if (job.matrixResults && job.matrixResults.length > 0) {
+        resultBodyMatrix.innerHTML = "";
+        job.matrixResults.forEach((res, i) => {
+          const tr = document.createElement('tr');
+          const isError = res.match_rate === '오류';
+          
+          let badgeClass = "badge-match-low";
+          const score = parseInt(res.match_rate) || 0;
+          if (isError) badgeClass = "badge-match-error";
+          else if (score >= 80) badgeClass = "badge-match-high";
+          else if (score >= 50) badgeClass = "badge-match-medium";
+
+          const skillsHtml = res.skills && res.skills.length > 0 
+            ? res.skills.map(s => `<span class="badge-skill">${s}</span>`).join('') 
+            : '-';
+
+          tr.innerHTML = `
+            <td style="font-weight: 600; color: #191F28; white-space: nowrap;">${res.name}</td>
+            <td style="white-space: nowrap;"><span class="badge ${badgeClass}">${res.match_rate}</span></td>
+            <td style="font-weight: 500; white-space: nowrap;">${res.total_experience || '-'}</td>
+            <td style="white-space: nowrap;">${res.average_tenure || '-'}</td>
+            <td><div class="skills-flex">${skillsHtml}</div></td>
+            <td style="color: #4E5968; font-size: 12.5px; max-width: 280px; line-height: 1.5;">${res.summary}</td>
+            <td style="white-space: nowrap;">
+              ${isError ? '-' : `<button onclick="restoreSingleFromJob('${job.id}', ${i})" style="background:#0050FF; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:600;">상세분석</button>`}
+            </td>
+          `;
+          resultBodyMatrix.appendChild(tr);
+        });
+        pdfBtnMatrix.style.display = "inline-flex";
+      } else {
+        resultBodyMatrix.innerHTML = `
+          <tr id="emptyRowMatrix">
+            <td colspan="7" class="empty-state">
+              왼쪽 폼에 이력서를 등록하고 분석을 실행하면 실시간 대조 매트릭스 표가 렌더링됩니다.
+            </td>
+          </tr>
+        `;
+        pdfBtnMatrix.style.display = "none";
+      }
+
+      // 단일 상세 분석 결과 복원
+      if (job.singleResult) {
+        renderSingleReport(job.singleResult);
+        pdfBtnSingle.style.display = "inline-flex";
+      } else {
+        emptySingleState.style.display = "block";
+        activeSingleDashboard.style.display = "none";
+        pdfBtnSingle.style.display = "none";
+      }
+    };
+
+    // 히스토리 항목 내 상세분석 트리거 복원
+    window.restoreSingleFromJob = function(jobId, index) {
+      const jobs = loadSavedJobs();
+      const job = jobs.find(j => j.id === jobId);
+      if (!job || !job.matrixResults) return;
+      const candidate = job.matrixResults[index];
+      if (!candidate) return;
+
+      tabSingleBtn.click();
+      
+      const mappedSingle = {
+        name: candidate.name,
+        age: "출생연도 확인필요",
+        location: "과거 저장 기록",
+        total_experience: candidate.total_experience,
+        average_tenure: candidate.average_tenure,
+        match_rate: candidate.match_rate,
+        match_reason: candidate.summary,
+        skills: candidate.skills,
+        certifications: [],
+        career_summary: [],
+        interview_questions: ["복원된 분석 기록입니다. 상세 타임라인 및 공백기 검증을 위해 이력서 파일을 단일 분석 탭에 다시 업로드해 주세요."]
+      };
+      renderSingleReport(mappedSingle);
+    };
+
+    // 초기화 분기 함수
+    const handleReset = () => {
+      const duty = jdDutiesMatrix.value.trim() || jdDutiesSingle.value.trim();
+      if (!duty) {
+        resetAllUI(false);
+        return;
+      }
+
+      if (confirm("현재 분석 중인 직무 요건을 저장하시겠습니까?\n\n('확인'을 누르면 히스토리에 저장 후 초기화하며, '취소'를 누르면 저장하지 않고 즉시 지웁니다.)")) {
+        resetAllUI(true);
+      } else {
+        resetAllUI(false);
+      }
+    };
+
+    // 초기화 버튼 이벤트 바인딩
+    document.getElementById('resetBtnMatrix').addEventListener('click', handleReset);
+    document.getElementById('resetBtnSingle').addEventListener('click', handleReset);
+
+
+    // ========================================================================
+    // E. PDF 문서 생성 및 다운로드 기능
+    // ========================================================================
+    async function downloadPDF(elementId, targetType) {
+      const element = document.getElementById(elementId);
+      if (!element) return;
+
+      // 📥 PDF 저장 시 다운로드 단추는 숨겨진 채로 캡처
+      const pdfButtons = element.querySelectorAll('.btn-pdf');
+      pdfButtons.forEach(btn => btn.style.visibility = 'hidden');
+
+      try {
+        const canvas = await html2canvas(element, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: '#ffffff',
+          logging: false
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+        const { jsPDF } = window.jspdf;
+        
+        // A4 비율 맞추기: 210mm x 297mm
+        const imgWidth = 210;
+        const pageHeight = 295;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        let heightLeft = imgHeight;
+        
+        const doc = new jsPDF('p', 'mm', 'a4');
+        let position = 0;
+        
+        doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+        
+        while (heightLeft >= 0) {
+          position = heightLeft - imgHeight;
+          doc.addPage();
+          doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+          heightLeft -= pageHeight;
+        }
+
+        // 파일명 구성
+        const date = new Date();
+        const dateStr = date.getFullYear() + String(date.getMonth() + 1).padStart(2, '0') + String(date.getDate()).padStart(2, '0');
+        const dutyText = jdDutiesMatrix.value.trim() || jdDutiesSingle.value.trim() || '종합채용';
+        const cleanDuty = dutyText.substring(0, 10).replace(/[\s\?\\\/]/g, '_');
+        const finalFileName = `${cleanDuty}_${targetType}_분석결과_${dateStr}.pdf`;
+
+        doc.save(finalFileName);
+      } catch (err) {
+        console.error('PDF 생성 중 에러 발생:', err);
+        alert('PDF 문서를 생성하는 중 오류가 발생했습니다.');
+      } finally {
+        pdfButtons.forEach(btn => btn.style.visibility = 'visible');
+      }
+    }
+
+    document.getElementById('pdfBtnMatrix').addEventListener('click', () => {
+      downloadPDF('matrixResultReportBlock', '매트릭스');
+    });
+
+    document.getElementById('pdfBtnSingle').addEventListener('click', () => {
+      downloadPDF('singleResultReportBlock', '심층분석');
+    });
   </script>
 </body>
 </html>
