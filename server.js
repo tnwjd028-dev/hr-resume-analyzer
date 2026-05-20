@@ -27,6 +27,9 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 } // Limit to 10MB per file
 });
 
+// Sleep utility function
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 /**
  * 🔒 개인정보 로컬 마스킹 함수 (전체 정규식 매칭)
  * @param {string} text 원본 텍스트
@@ -134,6 +137,35 @@ function parseHwp(buffer) {
   }
 }
 
+/**
+ * ⚡ Gemini API 호출 재시도 래퍼 (503/429 일시적 장애 복원 전용)
+ * @param {GoogleGenAI} ai SDK 인스턴스
+ * @param {object} params 호출 매개변수
+ * @param {number} retries 남은 재시도 횟수
+ * @param {number} delay 대기 간격 (ms)
+ */
+async function generateContentWithRetry(ai, params, retries = 3, delay = 1500) {
+  try {
+    return await ai.models.generateContent(params);
+  } catch (err) {
+    const errMsg = err.message || '';
+    const isTransientError = 
+      errMsg.includes('503') || 
+      errMsg.includes('UNAVAILABLE') || 
+      errMsg.includes('429') || 
+      errMsg.includes('RESOURCE_EXHAUSTED') ||
+      errMsg.includes('high demand') ||
+      errMsg.includes('temporary');
+
+    if (isTransientError && retries > 0) {
+      console.warn(`[WARN] Gemini API 일시적 오류 감지. ${delay}ms 후 재시도합니다... (남은 횟수: ${retries}회, 원인: ${errMsg.substring(0, 60)})`);
+      await sleep(delay);
+      return generateContentWithRetry(ai, params, retries - 1, delay * 2); // 지수 백오프 적용
+    }
+    throw err;
+  }
+}
+
 // 🚀 다중 파일 비교 매트릭스 API (최대 20개 파일)
 app.post('/api/analyze', upload.array('resumes', 20), async (req, res) => {
   try {
@@ -168,9 +200,15 @@ app.post('/api/analyze', upload.array('resumes', 20), async (req, res) => {
     const results = [];
 
     // 개별 파일 처리 루프 (한 파일 오류 시에도 전체가 무너지지 않도록 try-catch 독립성 부여)
-    for (const file of req.files) {
+    for (let i = 0; i < req.files.length; i++) {
+      const file = req.files[i];
       const fileName = file.originalname;
       const ext = path.extname(fileName).toLowerCase();
+
+      // 두 번째 파일 호출 시점부터 800ms의 인위적인 대기 시간을 주어 트래픽 버스트 조절
+      if (i > 0) {
+        await sleep(800);
+      }
 
       try {
         let extractedText = '';
@@ -222,8 +260,8 @@ ${jdText}
 ${maskedText}
 `;
 
-        // Gemini API 호출
-        const response = await ai.models.generateContent({
+        // 자동 재시도 래퍼 적용 호출
+        const response = await generateContentWithRetry(ai, {
           model: 'gemini-2.5-flash',
           contents: systemPrompt,
           config: {
@@ -244,13 +282,27 @@ ${maskedText}
 
       } catch (fileErr) {
         console.error(`[ERROR] 파일 처리 실패 (${fileName}):`, fileErr);
+
+        let friendlyMessage = "분석 실패 (알 수 없는 오류)";
+        const errMsg = fileErr.message || '';
+        
+        if (errMsg.includes('503') || errMsg.includes('UNAVAILABLE') || errMsg.includes('high demand')) {
+          friendlyMessage = "구글 API 서버 일시적 과부하 (잠시 후 다시 시도)";
+        } else if (errMsg.includes('429') || errMsg.includes('RESOURCE_EXHAUSTED')) {
+          friendlyMessage = "API 요청 한도 초과 (잠시 후 다시 시도)";
+        } else if (errMsg.includes('API key') || errMsg.includes('API 키')) {
+          friendlyMessage = "인증 실패 (API 키 설정을 확인해 주세요)";
+        } else {
+          friendlyMessage = `분석 실패: ${errMsg.substring(0, 80)}`; // 에러 메시지가 너무 길면 테이블이 깨지므로 잘라서 가공
+        }
+
         results.push({
           name: fileName,
           match_rate: "오류",
           total_experience: "-",
           average_tenure: "-",
           skills: [],
-          summary: `분석 실패: ${fileErr.message}`
+          summary: friendlyMessage
         });
       }
     }
