@@ -334,7 +334,7 @@ app.get('/', (req, res) => {
 });
 
 // Express 서버 실행
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`=======================================================`);
   console.log(`  보안 안심형 멀티포맷 이력서 분석기 서버가 가동되었습니다.`);
   console.log(`  지원 형식: PDF, DOCX(Word), HWP(한글)`);
