@@ -25,7 +25,7 @@
     }
 
     .container {
-      max-width: 1440px;
+      max-width: 1600px;
       margin: 0 auto;
     }
 
@@ -264,13 +264,13 @@
 
     .grid-matrix {
       display: grid;
-      grid-template-columns: 0.85fr 2.15fr;
+      grid-template-columns: 0.7fr 2.3fr;
       gap: 30px;
     }
 
     .grid-single {
       display: grid;
-      grid-template-columns: 0.85fr 2.15fr;
+      grid-template-columns: 0.7fr 2.3fr;
       gap: 30px;
     }
 
@@ -979,13 +979,13 @@
 
             // 행 렌더링 + 심층 분석 링크 달기
             tr.innerHTML = `
-              <td style="font-weight: 600; color: #191F28;">${res.name}</td>
-              <td><span class="badge ${badgeClass}">${res.match_rate}</span></td>
-              <td style="font-weight: 500;">${res.total_experience || '-'}</td>
-              <td>${res.average_tenure || '-'}</td>
+              <td style="font-weight: 600; color: #191F28; white-space: nowrap;">${res.name}</td>
+              <td style="white-space: nowrap;"><span class="badge ${badgeClass}">${res.match_rate}</span></td>
+              <td style="font-weight: 500; white-space: nowrap;">${res.total_experience || '-'}</td>
+              <td style="white-space: nowrap;">${res.average_tenure || '-'}</td>
               <td><div class="skills-flex">${skillsHtml}</div></td>
               <td style="color: #4E5968; font-size: 12.5px; max-width: 280px; line-height: 1.5;">${res.summary}</td>
-              <td>
+              <td style="white-space: nowrap;">
                 ${isError ? '-' : `<button onclick="analyzeSingleFromMatrix(${i})" style="background:#0050FF; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:600;">상세분석</button>`}
               </td>
             `;
