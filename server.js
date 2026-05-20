@@ -21,7 +21,7 @@ app.use(express.json());
 // Serve static frontend files from current directory
 app.use(express.static(__dirname));
 
-// Multer configurations for multi-file array
+// Multer configurations (memory storage)
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 } // Limit to 10MB per file
@@ -166,8 +166,176 @@ async function generateContentWithRetry(ai, params, retries = 3, delay = 1500) {
   }
 }
 
-// 🚀 다중 파일 비교 매트릭스 API (최대 20개 파일)
-app.post('/api/analyze', upload.array('resumes', 20), async (req, res) => {
+/**
+ * 이력서 버퍼 및 확장자 정보로 텍스트를 추출하는 공통 파서
+ */
+async function extractTextFromFile(buffer, filename) {
+  const ext = path.extname(filename).toLowerCase();
+  if (ext === '.pdf') {
+    let parsedPdf;
+    if (typeof pdfParse === 'function') {
+      parsedPdf = await pdfParse(buffer);
+    } else if (pdfParse && typeof pdfParse.default === 'function') {
+      parsedPdf = await pdfParse.default(buffer);
+    } else {
+      const pdfFallback = require('pdf-parse/lib/pdf-parse.js');
+      parsedPdf = await pdfFallback(buffer);
+    }
+    return parsedPdf.text;
+  } else if (ext === '.docx') {
+    const docxResult = await mammoth.extractRawText({ buffer });
+    return docxResult.value;
+  } else if (ext === '.hwp') {
+    return parseHwp(buffer);
+  } else {
+    throw new Error('지원하지 않는 파일 형식입니다. (PDF, DOCX, HWP만 가능)');
+  }
+}
+
+// ============================================================================
+// 1. 단일 지원자 상세 분석 엔드포인트 (/api/analyze/single)
+// ============================================================================
+app.post('/api/analyze/single', upload.single('resume'), async (req, res) => {
+  try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.status(400).json({ error: 'Gemini API 키가 구성되지 않았습니다. .env 파일을 확인해 주세요.' });
+    }
+    if (!req.file) {
+      return res.status(400).json({ error: '업로드된 파일이 없습니다.' });
+    }
+
+    const jdText = req.body.jdText || '일반적인 커리어 매칭 및 공백기 분석';
+    const fileName = req.file.originalname;
+
+    console.log(`[INFO] 단일 분석 시작: ${fileName} (${req.file.size} bytes)`);
+
+    // 1단계: 텍스트 추출
+    let rawText = '';
+    try {
+      rawText = await extractTextFromFile(req.file.buffer, fileName);
+    } catch (parseErr) {
+      console.error(`[ERROR] 파일 파싱 실패:`, parseErr);
+      return res.status(500).json({ error: `파일 텍스트 추출 실패: ${parseErr.message}` });
+    }
+
+    if (!rawText || rawText.trim().length === 0) {
+      return res.status(400).json({ error: '이력서 파일에 텍스트 데이터가 없거나 스캔본 이미지 형식입니다.' });
+    }
+
+    // 2단계: 로컬 개인정보 마스킹
+    const maskedText = maskPersonalInfo(rawText);
+
+    // 3단계: Gemini 구조화 요청
+    const singleResponseSchema = {
+      type: "OBJECT",
+      properties: {
+        name: { type: "STRING" },
+        age: { type: "STRING" },
+        location: { type: "STRING" },
+        total_experience: { type: "STRING" },
+        average_tenure: { type: "STRING" },
+        match_rate: { type: "STRING" },
+        match_reason: { type: "STRING" },
+        gap_periods: {
+          type: "ARRAY",
+          items: {
+            type: "OBJECT",
+            properties: {
+              period: { type: "STRING" },
+              duration: { type: "STRING" }
+            },
+            required: ["period", "duration"]
+          }
+        },
+        skills: { type: "ARRAY", items: { type: "STRING" } },
+        certifications: { type: "ARRAY", items: { type: "STRING" } },
+        career_summary: {
+          type: "ARRAY",
+          items: {
+            type: "OBJECT",
+            properties: {
+              company: { type: "STRING" },
+              period: { type: "STRING" },
+              role: { type: "STRING" },
+              description: { type: "STRING" }
+            },
+            required: ["company", "period", "description"]
+          }
+        },
+        interview_questions: { type: "ARRAY", items: { type: "STRING" } }
+      },
+      required: [
+        "name", "age", "location", "total_experience", "average_tenure",
+        "match_rate", "match_reason", "gap_periods", "skills", "certifications",
+        "career_summary", "interview_questions"
+      ]
+    };
+
+    const systemPrompt = `
+당신은 기업의 전문 인사기획팀 소속 커리어 분석관 및 채용 전문가입니다.
+지원자의 이력서 텍스트(개인정보가 마스킹된 상태)를 분석하여 경력 구조를 체계적으로 파악하고, 직장 간의 공백기를 계산하며, 제공된 직무 기술서(JD)와 이력서를 정밀 대조하여 직무 매칭률을 산출해야 합니다.
+
+다음 규칙을 엄격하게 준수하여 분석을 수행해 주세요:
+1. 'match_rate' (직무 매칭률) 및 'match_reason' (매칭 사유):
+   - 제공된 [직무 기술서]의 필수 요건 및 우대 사항과 [이력서 텍스트]를 정밀 비교하여 직무 매칭률(match_rate)과 구체적인 매칭 사유(match_reason)를 산출해 주세요.
+   - match_rate는 '85%'와 같이 0%에서 100% 사이의 백분율 형식 문자열이어야 합니다.
+   - match_reason은 이력서와 JD를 대조했을 때의 강점과 부족한 점을 요약한 평가 내용을 한국어로 작성해 주세요. 만약 [직무 기술서] 요건이 비어 있는 경우 match_rate는 '0%', match_reason은 '직무 기술서(JD) 요건이 입력되지 않았습니다.'로 응답하세요.
+2. 'gap_periods' (공백기 분석):
+   - 직장 간의 재직 기간 사이에 발생한 공백이 "3개월 이상"인 구간을 모두 찾으세요.
+   - 예: 이전 직장 퇴사일이 2021년 2월이고 다음 직장 입사일이 2021년 10월이면 약 8개월의 공백기가 존재하므로, 이를 [{"period": "2021.03 ~ 2021.10", "duration": "8개월"}] 형태로 포함해야 합니다.
+   - 날짜가 겹치거나 공백이 3개월 미만이면 공백기 리스트에 추가하지 마십시오. 공백기가 없으면 빈 배열([])을 반환합니다.
+3. 'average_tenure' (평균 이직 주기):
+   - 각 직장별 재직 기간의 평균을 구하세요. (예: 1개 직장에 평균적으로 머무는 기간. 예: "1년 6개월", "2년 4개월" 등)
+4. 'total_experience' (총 경력 기간):
+   - 중복되지 않는 모든 재직 기간을 합산한 총 경력을 명확한 문자열 형식으로 구하세요. (예: "4년 2개월", "8년 10개월" 등)
+5. 'interview_questions' (추천 면접 질문):
+   - 이력서 기반의 맞춤형 면접 추천 질문 3가지를 도출하세요.
+   - 만약 3개월 이상의 공백기가 감지되었다면, 그중 최소한 하나 이상의 질문은 공백기 사유 검증 질문(예: "공백기 동안 어떤 경험/활동을 했는지")이어야 합니다.
+6. 'location': 거주지를 시/구 단위까지만 추출하십시오. 예: "서울시 마포구", "경기도 성남시". 상세 정보는 제외합니다.
+7. 'age': 출생연도를 추출하고, 현재 연도(2026년) 기준 나이를 계산해 기재하십시오. 예: "1992년생 (만 34세)"
+8. 마스킹 가이드라인: 전달된 텍스트 중 "[전화번호 마스킹]" 또는 "[이메일 마스킹]", "[상세주소 마스킹]"으로 표시된 부분은 수정하거나 추측하여 복원하지 말고 그대로 보존하거나 공백으로 처리하세요.
+
+제출된 이력서 데이터:
+"""
+${maskedText}
+"""
+
+제출된 직무 기술서(JD):
+"""
+${jdText}
+"""
+`;
+
+    const ai = new GoogleGenAI({ apiKey });
+    const response = await generateContentWithRetry(ai, {
+      model: 'gemini-2.5-flash',
+      contents: systemPrompt,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: singleResponseSchema,
+        temperature: 0.1
+      }
+    });
+
+    const structuredData = JSON.parse(response.text);
+
+    if (!structuredData.name || structuredData.name.trim() === '' || structuredData.name.includes('[마스킹]')) {
+      structuredData.name = fileName.replace(/\.[^/.]+$/, "");
+    }
+
+    res.json(structuredData);
+
+  } catch (error) {
+    console.error('[ERROR] 단일 분석 에러:', error);
+    res.status(500).json({ error: `분석 실패: ${error.message}` });
+  }
+});
+
+// ============================================================================
+// 2. 다중 지원자 비교 매트릭스 엔드포인트 (/api/analyze/matrix)
+// ============================================================================
+app.post('/api/analyze/matrix', upload.array('resumes', 20), async (req, res) => {
   try {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -179,8 +347,7 @@ app.post('/api/analyze', upload.array('resumes', 20), async (req, res) => {
 
     const jdText = req.body.jdText || '일반적인 업무 적합성 검토';
 
-    // 1명 분석을 위한 JSON responseSchema 규격
-    const responseSchema = {
+    const matrixResponseSchema = {
       type: "OBJECT",
       properties: {
         name: { type: "STRING" },
@@ -199,47 +366,23 @@ app.post('/api/analyze', upload.array('resumes', 20), async (req, res) => {
     const ai = new GoogleGenAI({ apiKey });
     const results = [];
 
-    // 개별 파일 처리 루프 (한 파일 오류 시에도 전체가 무너지지 않도록 try-catch 독립성 부여)
+    // 개별 파일 처리 루프
     for (let i = 0; i < req.files.length; i++) {
       const file = req.files[i];
       const fileName = file.originalname;
-      const ext = path.extname(fileName).toLowerCase();
 
-      // 두 번째 파일 호출 시점부터 800ms의 인위적인 대기 시간을 주어 트래픽 버스트 조절
       if (i > 0) {
-        await sleep(800);
+        await sleep(800); // 800ms Throttle 딜레이
       }
 
       try {
-        let extractedText = '';
-        
-        if (ext === '.pdf') {
-          let parsedPdf;
-          if (typeof pdfParse === 'function') {
-            parsedPdf = await pdfParse(file.buffer);
-          } else if (pdfParse && typeof pdfParse.default === 'function') {
-            parsedPdf = await pdfParse.default(file.buffer);
-          } else {
-            const pdfFallback = require('pdf-parse/lib/pdf-parse.js');
-            parsedPdf = await pdfFallback(file.buffer);
-          }
-          extractedText = parsedPdf.text;
-        } else if (ext === '.docx') {
-          const docxResult = await mammoth.extractRawText({ buffer: file.buffer });
-          extractedText = docxResult.value;
-        } else if (ext === '.hwp') {
-          extractedText = parseHwp(file.buffer);
-        } else {
-          results.push({ name: fileName, match_rate: "0%", total_experience: "-", average_tenure: "-", skills: [], summary: "지원하지 않는 확장자 포맷" });
-          continue;
-        }
+        const extractedText = await extractTextFromFile(file.buffer, fileName);
 
         if (!extractedText || extractedText.trim().length === 0) {
-          results.push({ name: fileName, match_rate: "0%", total_experience: "-", average_tenure: "-", skills: [], summary: "텍스트 추출 불가 (이미지 문서 가능성)" });
+          results.push({ name: fileName, match_rate: "0%", total_experience: "-", average_tenure: "-", skills: [], summary: "텍스트 추출 불가 (스캔 파일 가능성)" });
           continue;
         }
 
-        // 보안 검증: 개인정보 로컬 마스킹 처리
         const maskedText = maskPersonalInfo(extractedText);
 
         const systemPrompt = `
@@ -260,22 +403,20 @@ ${jdText}
 ${maskedText}
 `;
 
-        // 자동 재시도 래퍼 적용 호출
         const response = await generateContentWithRetry(ai, {
           model: 'gemini-2.5-flash',
           contents: systemPrompt,
           config: {
             responseMimeType: 'application/json',
-            responseSchema: responseSchema,
+            responseSchema: matrixResponseSchema,
             temperature: 0.1
           }
         });
 
         const structuredData = JSON.parse(response.text);
         
-        // 만약 AI가 추출한 name이 없거나 너무 짧으면 파일명을 대리 지정
         if (!structuredData.name || structuredData.name.trim() === '' || structuredData.name.includes('[마스킹]')) {
-          structuredData.name = fileName.replace(/\.[^/.]+$/, ""); // 확장자 제거
+          structuredData.name = fileName.replace(/\.[^/.]+$/, "");
         }
 
         results.push(structuredData);
@@ -293,7 +434,7 @@ ${maskedText}
         } else if (errMsg.includes('API key') || errMsg.includes('API 키')) {
           friendlyMessage = "인증 실패 (API 키 설정을 확인해 주세요)";
         } else {
-          friendlyMessage = `분석 실패: ${errMsg.substring(0, 80)}`; // 에러 메시지가 너무 길면 테이블이 깨지므로 잘라서 가공
+          friendlyMessage = `분석 실패: ${errMsg.substring(0, 80)}`;
         }
 
         results.push({
@@ -323,7 +464,7 @@ app.get('/', (req, res) => {
 // Express 서버 가동
 app.listen(port, '0.0.0.0', () => {
   console.log(`=======================================================`);
-  console.log(`  보안 안심형 다중 비교 매트릭스 서버가 가동되었습니다.`);
+  console.log(`  보안 안심형 통합 이력서 대시보드 서버가 가동되었습니다.`);
   console.log(`  주소: http://localhost:${port}`);
   console.log(`=======================================================`);
 });
