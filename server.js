@@ -13,33 +13,22 @@ const { GoogleGenAI } = require('@google/genai');
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const port = process.env.PORT || 8080;
 
-// Enable CORS and JSON parsing
 app.use(cors());
 app.use(express.json());
 
 // Serve static frontend files from current directory
 app.use(express.static(__dirname));
 
-// Multer storage configuration (PDF, DOCX, HWP parsing)
+// Multer configurations for multi-file array
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 }, // Limit to 10MB
-  fileFilter: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const allowedExtensions = ['.pdf', '.docx', '.hwp'];
-    
-    if (allowedExtensions.includes(ext)) {
-      cb(null, true);
-    } else {
-      cb(new Error('PDF, Word(.docx), 한글(.hwp) 파일만 업로드할 수 있습니다.'));
-    }
-  }
+  limits: { fileSize: 10 * 1024 * 1024 } // Limit to 10MB per file
 });
 
 /**
- * 2. 최우선 보안 로직: 개인정보 로컬 마스킹 함수
+ * 🔒 개인정보 로컬 마스킹 함수 (전체 정규식 매칭)
  * @param {string} text 원본 텍스트
  * @returns {string} 마스킹 처리된 안전한 텍스트
  */
@@ -50,11 +39,11 @@ function maskPersonalInfo(text) {
 
   // 1. 휴대폰 번호 및 일반 전화번호 마스킹
   const phoneRegex = /(010|02|0[3-9]{1}[0-9]{1,2})[-. ]?[0-9]{3,4}[-. ]?[0-9]{4}/g;
-  maskedText = maskedText.replace(phoneRegex, '[전화번호 보안 마스킹]');
+  maskedText = maskedText.replace(phoneRegex, '[전화번호 마스킹]');
 
   // 2. 이메일 주소 마스킹
   const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-  maskedText = maskedText.replace(emailRegex, '[이메일 보안 마스킹]');
+  maskedText = maskedText.replace(emailRegex, '[이메일 마스킹]');
 
   // 3. 주소지의 상세 주소 마스킹
   const detailPatterns = [
@@ -68,83 +57,72 @@ function maskPersonalInfo(text) {
   ];
 
   detailPatterns.forEach(pattern => {
-    maskedText = maskedText.replace(pattern, '[상세주소 보안 마스킹]');
+    maskedText = maskedText.replace(pattern, '[상세주소 마스킹]');
   });
 
   // 주민번호 마스킹
   const juminRegex = /\d{6}[-. ]?[1-4]\d{6}/g;
-  maskedText = maskedText.replace(juminRegex, '[주민번호 보안 마스킹]');
+  maskedText = maskedText.replace(juminRegex, '[주민번호 마스킹]');
 
   return maskedText;
 }
 
 /**
- * HWP 5.0 OLE 파일 텍스트 추출 로컬 파싱 함수
+ * 📄 한글 HWP 5.0 OLE 포맷의 압축 해제 및 유니코드 복원 파서
  * @param {Buffer} buffer HWP 파일 버퍼
- * @returns {string} 추출 및 정제된 한글/영문 텍스트
+ * @returns {string} 복원된 텍스트
  */
 function parseHwp(buffer) {
   try {
-    // 1. CFB를 사용하여 OLE 컨테이너 로드
     const file = cfb.read(buffer, { type: 'buffer' });
     let fullText = '';
 
-    // FileIndex 내의 파일 경로 수집
     const paths = file.FileIndex.map(x => x.name);
-    
-    // 2. HWP 이력서의 본문이 담긴 BodyText 섹션들 추출
     const sectionPaths = paths.filter(p => p.includes('BodyText/Section'));
     
     if (sectionPaths.length === 0) {
-      throw new Error('이력서 파일에서 본문 섹션(BodyText)을 찾을 수 없습니다.');
+      throw new Error('본문 데이터(BodyText) 섹션이 존재하지 않는 문서입니다.');
     }
 
-    // 3. Section 정렬 (Section0, Section1, ...)
     sectionPaths.sort((a, b) => {
       const numA = parseInt(a.replace(/.*Section(\d+)/, '$1'), 10);
       const numB = parseInt(b.replace(/.*Section(\d+)/, '$1'), 10);
       return numA - numB;
     });
 
-    // 4. 각 Section에 접근하여 데이터 복원
     for (const sectionPath of sectionPaths) {
       const entry = file.FileIndex.find(x => x.name === sectionPath);
       if (!entry || !entry.content) continue;
       
       const rawData = Buffer.from(entry.content);
       
-      // HWP의 각 Section 스트림은 Deflate 알고리즘으로 압축되어 있는 것이 규격
       let decompressed;
       try {
         decompressed = zlib.inflateRawSync(rawData);
       } catch (err) {
-        // 간혹 압축이 되어 있지 않은 특수 포맷의 경우 원본 버퍼 유지
         decompressed = rawData;
       }
 
-      // HWP 5.0 본문 텍스트는 UTF-16LE 형태로 인코딩되어 저장됨
       const utf16String = decompressed.toString('utf-16le');
       
-      // 5. 바이너리 제어문자를 소거하고 한국어, 영어, 숫자, 기본 기호 및 띄어쓰기만 스크러빙
       let cleanText = '';
       for (let i = 0; i < utf16String.length; i++) {
         const code = utf16String.charCodeAt(i);
         
         if (
-          (code >= 0xAC00 && code <= 0xD7A3) || // 한글 가~힣
-          (code >= 0x1100 && code <= 0x11FF) || // 한글 자모
-          (code >= 0x3130 && code <= 0x318F) || // 한글 호환 자모
-          (code >= 65 && code <= 90) ||         // 영문 대문자
-          (code >= 97 && code <= 122) ||        // 영문 소문자
-          (code >= 48 && code <= 57) ||         // 숫자
-          code === 10 || code === 13 || code === 32 || // 줄바꿈, 스페이스
-          [44, 46, 63, 33, 40, 41, 45, 47, 58, 95, 64, 126, 43].includes(code) // 기본 특수기호 (, . ? ! ( ) - / : _ @ ~ +)
+          (code >= 0xAC00 && code <= 0xD7A3) || 
+          (code >= 0x1100 && code <= 0x11FF) || 
+          (code >= 0x3130 && code <= 0x318F) || 
+          (code >= 65 && code <= 90) ||         
+          (code >= 97 && code <= 122) ||        
+          (code >= 48 && code <= 57) ||         
+          code === 10 || code === 13 || code === 32 || 
+          [44, 46, 63, 33, 40, 41, 45, 47, 58, 95, 64, 126, 43].includes(code)
         ) {
           cleanText += utf16String.charAt(i);
         }
       }
       
-      // 무분별한 다중 공백은 하나로 축소
       cleanText = cleanText.replace(/\s+/g, ' ');
       fullText += cleanText + '\n';
     }
@@ -152,192 +130,148 @@ function parseHwp(buffer) {
     return fullText;
   } catch (err) {
     console.error('[ERROR] HWP 파싱 실패:', err);
-    throw new Error(`한글(HWP) 이력서 파일 텍스트 추출 중 오류가 발생했습니다: ${err.message}`);
+    throw new Error(`한글 HWP 파싱 오류: ${err.message}`);
   }
 }
 
-// REST API 엔드포인트: 이력서 파일 업로드 및 분석 (PDF, Word, HWP 공용)
-app.post('/api/analyze', upload.single('resume'), async (req, res) => {
+// 🚀 다중 파일 비교 매트릭스 API (최대 20개 파일)
+app.post('/api/analyze', upload.array('resumes', 20), async (req, res) => {
   try {
-    if (!req.file) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.status(400).json({ error: 'Gemini API 키가 구성되지 않았습니다. .env 파일을 확인해 주세요.' });
+    }
+    if (!req.files || req.files.length === 0) {
       return res.status(400).json({ error: '업로드된 파일이 없습니다.' });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY_HERE') {
-      return res.status(400).json({
-        error: 'Gemini API 키가 구성되지 않았습니다. 프로젝트 루트의 .env 파일에 GEMINI_API_KEY를 입력해 주세요.'
-      });
-    }
+    const jdText = req.body.jdText || '일반적인 업무 적합성 검토';
 
-    // 폼 데이터로부터 jdText 추출
-    const jdText = req.body.jdText || '';
-
-    const ext = path.extname(req.file.originalname).toLowerCase();
-    console.log(`[INFO] 이력서 분석 시작: ${req.file.originalname} (${req.file.size} bytes, 포맷: ${ext})`);
-
-    // 1단계: 확장자에 따른 파일 텍스트 추출 분기 처리
-    let rawText = '';
-    
-    try {
-      if (ext === '.pdf') {
-        // pdf-parse의 로드 및 호출 방식을 방어적으로 처리 (pdfParse is not a function 에러 원천 방지)
-        let parsedPdf;
-        if (typeof pdfParse === 'function') {
-          parsedPdf = await pdfParse(req.file.buffer);
-        } else if (pdfParse && typeof pdfParse.default === 'function') {
-          parsedPdf = await pdfParse.default(req.file.buffer);
-        } else if (pdfParse && typeof pdfParse.pdfParse === 'function') {
-          parsedPdf = await pdfParse.pdfParse(req.file.buffer);
-        } else {
-          // 최후의 보루: 패키지 내부 모듈 직접 호출
-          const pdfFallback = require('pdf-parse/lib/pdf-parse.js');
-          parsedPdf = await pdfFallback(req.file.buffer);
-        }
-        
-        rawText = parsedPdf.text;
-      } else if (ext === '.docx') {
-        const docxResult = await mammoth.extractRawText({ buffer: req.file.buffer });
-        rawText = docxResult.value;
-      } else if (ext === '.hwp') {
-        rawText = parseHwp(req.file.buffer);
-      } else {
-        return res.status(400).json({ error: '지원하지 않는 파일 형식입니다. PDF, DOCX, HWP 형식만 가능합니다.' });
-      }
-    } catch (parseErr) {
-      console.error(`[ERROR] 파일 파싱 실패 (${ext}):`, parseErr);
-      return res.status(500).json({ error: `이력서 파일에서 텍스트를 추출하는 데 실패했습니다: ${parseErr.message}` });
-    }
-
-    if (!rawText || rawText.trim().length === 0) {
-      return res.status(400).json({ error: '이력서 파일에 텍스트 데이터가 없거나 인식할 수 없는 이미지/스캔본 형식입니다.' });
-    }
-
-    console.log(`[INFO] 텍스트 추출 완료 (${rawText.length} 자)`);
-
-    // 2단계: 최우선 보안 로직 - 개인정보 로컬 마스킹 처리 (모든 포맷 공통 적용)
-    const maskedText = maskPersonalInfo(rawText);
-    console.log('[INFO] 로컬 전처리 마스킹 처리 완료');
-
-    // 3단계: Gemini API 연동을 통한 데이터 구조화 및 공백기 분석
-    const ai = new GoogleGenAI({ apiKey });
-
-    const systemPrompt = `
-당신은 기업의 전문 인사기획팀 소속 커리어 분석관 및 채용 전문가입니다.
-지원자의 이력서 텍스트(개인정보가 마스킹된 상태)를 분석하여 경력 구조를 체계적으로 파악하고, 직장 간의 공백기를 계산하며, 제공된 직무 기술서(JD)와 이력서를 정밀 대조하여 직무 매칭률을 산출해야 합니다.
-
-다음 규칙을 엄격하게 준수하여 분석을 수행해 주세요:
-1. 'match_rate' (직무 매칭률) 및 'match_reason' (매칭 사유):
-   - 제공된 [직무 기술서]의 필수 요건 및 우대 사항과 [이력서 텍스트]를 정밀 비교하여 직무 매칭률(match_rate)과 구체적인 매칭 사유(match_reason)를 산출해 주세요.
-   - match_rate는 '85%'와 같이 0%에서 100% 사이의 백분율 형식 문자열이어야 합니다.
-   - match_reason은 이력서와 JD를 대조했을 때의 강점과 부족한 점을 요약한 평가 내용을 한국어로 작성해 주세요. 만약 [직무 기술서] 요건이 비어 있는 경우 match_rate는 '0%', match_reason은 '직무 기술서(JD) 요건이 입력되지 않았습니다.'로 응답하세요.
-2. 'gap_periods' (공백기 분석):
-   - 직장 간의 재직 기간 사이에 발생한 공백이 "3개월 이상"인 구간을 모두 찾으세요.
-   - 예: 이전 직장 퇴사일이 2021년 2월이고 다음 직장 입사일이 2021년 10월이면 약 8개월의 공백기가 존재하므로, 이를 [{"period": "2021.03 ~ 2021.10", "duration": "8개월"}] 형태로 포함해야 합니다.
-   - 날짜가 겹치거나 공백이 3개월 미만이면 공백기 리스트에 추가하지 마십시오. 공백기가 없으면 빈 배열([])을 반환합니다.
-3. 'average_tenure' (평균 이직 주기):
-   - 각 직장별 재직 기간의 평균을 구하세요. (예: 1개 직장에 평균적으로 머무는 기간. 예: "1년 6개월", "2년 4개월" 등)
-4. 'total_experience' (총 경력 기간):
-   - 중복되지 않는 모든 재직 기간을 합산한 총 경력을 명확한 문자열 형식으로 구하세요. (예: "4년 2개월", "8년 10개월" 등)
-5. 'interview_questions' (추천 면접 질문):
-   - 이력서 기반의 맞춤형 면접 추천 질문 3가지를 도출하세요.
-   - 만약 3개월 이상의 공백기가 감지되었다면, 그중 최소한 하나 이상의 질문은 공백기 사유 검증 질문(예: "공백기 동안 어떤 경험/활동을 했는지")이어야 합니다.
-6. 'location': 거주지를 시/구 단위까지만 추출하십시오. 예: "서울시 마포구", "경기도 성남시". 상세 정보는 제외합니다.
-7. 'age': 출생연도를 추출하고, 현재 연도(2026년) 기준 나이를 계산해 기재하십시오. 예: "1992년생 (만 34세)"
-8. 마스킹 가이드라인: 전달된 텍스트 중 "[전화번호 보안 마스킹]" 또는 "[이메일 보안 마스킹]", "[상세주소 보안 마스킹]"으로 표시된 부분은 수정하거나 추측하여 복원하지 말고 그대로 보존하거나 공백으로 처리하세요.
-
-제출된 이력서 데이터:
-"""
-${maskedText}
-"""
-
-제출된 직무 기술서(JD):
-"""
-${jdText}
-"""
-`;
-
-    // Structured Output Schema 정의
-    const jsonSchema = {
+    // 1명 분석을 위한 JSON responseSchema 규격
+    const responseSchema = {
       type: "OBJECT",
       properties: {
         name: { type: "STRING" },
-        age: { type: "STRING" },
-        location: { type: "STRING" },
+        match_rate: { type: "STRING" },
         total_experience: { type: "STRING" },
         average_tenure: { type: "STRING" },
-        match_rate: { type: "STRING" },
-        match_reason: { type: "STRING" },
-        gap_periods: {
-          type: "ARRAY",
-          items: {
-            type: "OBJECT",
-            properties: {
-              period: { type: "STRING" },
-              duration: { type: "STRING" }
-            },
-            required: ["period", "duration"]
-          }
+        skills: { 
+          type: "ARRAY", 
+          items: { type: "STRING" } 
         },
-        skills: { type: "ARRAY", items: { type: "STRING" } },
-        certifications: { type: "ARRAY", items: { type: "STRING" } },
-        career_summary: {
-          type: "ARRAY",
-          items: {
-            type: "OBJECT",
-            properties: {
-              company: { type: "STRING" },
-              period: { type: "STRING" },
-              role: { type: "STRING" },
-              description: { type: "STRING" }
-            },
-            required: ["company", "period", "description"]
-          }
-        },
-        interview_questions: { type: "ARRAY", items: { type: "STRING" } }
+        summary: { type: "STRING" }
       },
-      required: [
-        "name", "age", "location", "total_experience", "average_tenure",
-        "match_rate", "match_reason", "gap_periods", "skills", "certifications",
-        "career_summary", "interview_questions"
-      ]
+      required: ["name", "match_rate", "total_experience", "average_tenure", "skills", "summary"]
     };
 
-    console.log('[INFO] Gemini API 호출 중 (직무 대조 포함)...');
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: systemPrompt,
-      config: {
-        responseMimeType: 'application/json',
-        responseSchema: jsonSchema,
-        temperature: 0.1
+    const ai = new GoogleGenAI({ apiKey });
+    const results = [];
+
+    // 개별 파일 처리 루프 (한 파일 오류 시에도 전체가 무너지지 않도록 try-catch 독립성 부여)
+    for (const file of req.files) {
+      const fileName = file.originalname;
+      const ext = path.extname(fileName).toLowerCase();
+
+      try {
+        let extractedText = '';
+        
+        if (ext === '.pdf') {
+          let parsedPdf;
+          if (typeof pdfParse === 'function') {
+            parsedPdf = await pdfParse(file.buffer);
+          } else if (pdfParse && typeof pdfParse.default === 'function') {
+            parsedPdf = await pdfParse.default(file.buffer);
+          } else {
+            const pdfFallback = require('pdf-parse/lib/pdf-parse.js');
+            parsedPdf = await pdfFallback(file.buffer);
+          }
+          extractedText = parsedPdf.text;
+        } else if (ext === '.docx') {
+          const docxResult = await mammoth.extractRawText({ buffer: file.buffer });
+          extractedText = docxResult.value;
+        } else if (ext === '.hwp') {
+          extractedText = parseHwp(file.buffer);
+        } else {
+          results.push({ name: fileName, match_rate: "0%", total_experience: "-", average_tenure: "-", skills: [], summary: "지원하지 않는 확장자 포맷" });
+          continue;
+        }
+
+        if (!extractedText || extractedText.trim().length === 0) {
+          results.push({ name: fileName, match_rate: "0%", total_experience: "-", average_tenure: "-", skills: [], summary: "텍스트 추출 불가 (이미지 문서 가능성)" });
+          continue;
+        }
+
+        // 보안 검증: 개인정보 로컬 마스킹 처리
+        const maskedText = maskPersonalInfo(extractedText);
+
+        const systemPrompt = `
+당신은 기업의 전문 인사기획팀 소속 커리어 분석관 및 채용 전문가입니다.
+제공된 [직무 기술서(JD)]의 필수 요건 및 우대 사항과 지원자의 [이력서 텍스트](개인정보가 마스킹된 상태)를 정밀 비교하여 아래의 JSON 구조로만 분석 결과를 반환해 주세요.
+
+규칙:
+1. match_rate는 '85%'와 같이 0%에서 100% 사이의 백분율 형식 문자열이어야 합니다.
+2. total_experience는 중복되지 않는 모든 재직 기간을 합산한 총 경력을 명확한 문자열 형식(예: "4년 2개월", "8년 10개월" 등)으로 구하세요.
+3. average_tenure는 각 직장별 재직 기간의 평균을 구하세요. (예: "1년 6개월", "2년 4개월" 등)
+4. skills는 이력서에서 추출된 핵심 기술 스킬이나 주요 역량을 단어 배열로 나열해 주세요. (최대 6개)
+5. summary는 이력서와 JD를 비교했을 때의 핵심 강점과 부족한 점을 요약한 한줄 의견을 한국어로 작성해 주세요. (1~2문장 이내)
+
+[직무 기술서(JD)]
+${jdText}
+
+[이력서 텍스트]
+${maskedText}
+`;
+
+        // Gemini API 호출
+        const response = await ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: systemPrompt,
+          config: {
+            responseMimeType: 'application/json',
+            responseSchema: responseSchema,
+            temperature: 0.1
+          }
+        });
+
+        const structuredData = JSON.parse(response.text);
+        
+        // 만약 AI가 추출한 name이 없거나 너무 짧으면 파일명을 대리 지정
+        if (!structuredData.name || structuredData.name.trim() === '' || structuredData.name.includes('[마스킹]')) {
+          structuredData.name = fileName.replace(/\.[^/.]+$/, ""); // 확장자 제거
+        }
+
+        results.push(structuredData);
+
+      } catch (fileErr) {
+        console.error(`[ERROR] 파일 처리 실패 (${fileName}):`, fileErr);
+        results.push({
+          name: fileName,
+          match_rate: "오류",
+          total_experience: "-",
+          average_tenure: "-",
+          skills: [],
+          summary: `분석 실패: ${fileErr.message}`
+        });
       }
-    });
+    }
 
-    const responseText = response.text;
-    console.log('[INFO] Gemini API 응답 수신 완료');
-
-    const structuredData = JSON.parse(responseText);
-    res.json(structuredData);
+    res.json({ results });
 
   } catch (error) {
-    console.error('[ERROR] 요청 처리 실패:', error);
-    res.status(500).json({
-      error: `서버 처리 중 오류가 발생했습니다: ${error.message}`
-    });
+    console.error('[ERROR] 다중 분석 실패:', error);
+    res.status(500).json({ error: '서버 내부 처리 오류: ' + error.message });
   }
 });
 
-// 기본 루트 경로: index.html 서빙
+// 기본 경로 index.html 서빙
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Express 서버 실행
-app.listen(PORT, '0.0.0.0', () => {
+// Express 서버 가동
+app.listen(port, '0.0.0.0', () => {
   console.log(`=======================================================`);
-  console.log(`  보안 안심형 멀티포맷 이력서 분석기 서버가 가동되었습니다.`);
-  console.log(`  지원 형식: PDF, DOCX(Word), HWP(한글)`);
-  console.log(`  주소: http://localhost:${PORT}`);
+  console.log(`  보안 안심형 다중 비교 매트릭스 서버가 가동되었습니다.`);
+  console.log(`  주소: http://localhost:${port}`);
   console.log(`=======================================================`);
 });

@@ -3,792 +3,617 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>보안 안심형 멀티포맷 이력서 분석기 | 인사기획팀 내부용</title>
-  <!-- Google Fonts: Inter & Outfit & Noto Sans KR -->
+  <title>이력서 비교 매트릭스 | 인사기획팀 전용</title>
+  <!-- Google Fonts: Inter, Outfit, Noto Sans KR -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'Noto Sans KR', 'sans-serif'],
-            outfit: ['Outfit', 'sans-serif'],
-          },
-          colors: {
-            toss: {
-              blue: '#0050FF',
-              lightBlue: '#E8F3FF',
-              darkBlue: '#003FD0',
-              gray50: '#F9FAFB',
-              gray100: '#F2F4F6',
-              gray200: '#E5E8EB',
-              gray600: '#4E5968',
-              gray800: '#191F28',
-              gray900: '#11161D',
-              orange: '#FF6B00',
-              orangeLight: '#FFF0E5',
-              green: '#2DCA73',
-              greenLight: '#E8F9EE'
-            }
-          }
-        }
-      }
-    }
-  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Outfit:wght@500;600;700;900&display=swap" rel="stylesheet">
+  
   <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
     body {
       background-color: #F8F9FA;
+      color: #191F28;
+      font-family: 'Inter', 'Noto Sans KR', sans-serif;
+      padding: 40px 20px;
+      line-height: 1.5;
     }
-    .custom-scrollbar::-webkit-scrollbar {
-      width: 6px;
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
     }
-    .custom-scrollbar::-webkit-scrollbar-track {
+
+    header {
+      margin-bottom: 35px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #E5E8EB;
+      padding-bottom: 24px;
+    }
+
+    header h1 {
+      font-size: 24px;
+      color: #11161D;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    header p {
+      color: #4E5968;
+      font-size: 14px;
+      margin-top: 6px;
+    }
+
+    .badge-top {
+      background: #E8F3FF;
+      color: #0050FF;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 99px;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.2fr 2fr;
+      gap: 30px;
+      margin-bottom: 35px;
+    }
+
+    @media (max-width: 1024px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: #FFFFFF;
+      padding: 28px;
+      border-radius: 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+      border: 1px solid #E5E8EB;
+      transition: y 0.2s ease;
+    }
+
+    .card h2 {
+      font-size: 15px;
+      margin-bottom: 16px;
+      color: #191F28;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .btn-sample {
+      font-size: 12px;
+      color: #0050FF;
       background: transparent;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
     }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
+
+    .btn-sample:hover {
+      text-decoration: underline;
+    }
+
+    textarea {
+      width: 100%;
+      height: 220px;
+      padding: 16px;
+      border-radius: 14px;
+      border: 1px solid #E5E8EB;
+      background: #F9FAFB;
+      font-size: 13px;
+      line-height: 1.6;
+      resize: none;
+      outline: none;
+      color: #333D4B;
+      transition: all 0.2s ease;
+    }
+
+    textarea:focus {
+      border-color: #0050FF;
+      background: #FFFFFF;
+      box-shadow: 0 0 0 3px rgba(0, 80, 255, 0.08);
+    }
+
+    .dropzone {
+      border: 2px dashed #0050FF;
+      background: #F8FAFF;
+      padding: 45px 20px;
+      border-radius: 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 220px;
+    }
+
+    .dropzone:hover {
+      background: #E8F3FF;
+      border-color: #003FD0;
+    }
+
+    .dropzone-icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+    }
+
+    .dropzone p.main-text {
+      font-size: 14px;
+      color: #0050FF;
+      font-weight: 600;
+    }
+
+    .dropzone p.sub-text {
+      font-size: 11px;
+      color: #6B7684;
+      margin-top: 6px;
+    }
+
+    .file-list-container {
+      margin-top: 15px;
+      width: 100%;
+      max-height: 110px;
+      overflow-y: auto;
+      border-top: 1px solid #E5E8EB;
+      padding-top: 12px;
+      display: none;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 10px;
+      background: #F9FAFB;
+      border-radius: 8px;
+      font-size: 12px;
+      margin-bottom: 6px;
+      border: 1px solid #E5E8EB;
+    }
+
+    .file-name {
+      color: #333D4B;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 80%;
+    }
+
+    .btn {
+      width: 100%;
+      background: #0050FF;
+      color: #FFFFFF;
+      padding: 16px;
+      border: none;
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(0, 80, 255, 0.15);
+    }
+
+    .btn:hover {
+      background: #003FD0;
+      box-shadow: 0 4px 16px rgba(0, 80, 255, 0.25);
+    }
+
+    .btn:disabled {
       background: #E5E8EB;
-      border-radius: 3px;
+      color: #B0B8C1;
+      cursor: not-allowed;
+      box-shadow: none;
     }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-      background: #CCD2D8;
+
+    .matrix-box {
+      background: #FFFFFF;
+      padding: 28px;
+      border-radius: 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+      border: 1px solid #E5E8EB;
+    }
+
+    .matrix-box h2 {
+      font-size: 16px;
+      color: #191F28;
+      font-weight: 700;
+      border-left: 4px solid #0050FF;
+      padding-left: 10px;
+      margin-bottom: 20px;
+    }
+
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th {
+      background: #F9FAFB;
+      color: #6B7684;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 14px 18px;
+      border-bottom: 1px solid #E5E8EB;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    td {
+      padding: 18px;
+      border-bottom: 1px solid #F2F4F6;
+      font-size: 13.5px;
+      color: #333D4B;
+      vertical-align: middle;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background-color: #F9FAFB;
+    }
+
+    .row-error {
+      background-color: #FFF8F8;
+    }
+    .row-error:hover td {
+      background-color: #FFEAEA;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .badge-match-high {
+      background: #E8F9EE;
+      color: #2DCA73;
+    }
+
+    .badge-match-medium {
+      background: #FFF0E5;
+      color: #FF6B00;
+    }
+
+    .badge-match-low {
+      background: #F2F4F6;
+      color: #6B7684;
+    }
+
+    .badge-match-error {
+      background: #FFEBEB;
+      color: #FF4D4F;
+    }
+
+    .badge-skill {
+      background: #F2F4F6;
+      color: #4E5968;
+      font-size: 11px;
+      font-family: inherit;
+      font-weight: 500;
+      margin-right: 4px;
+      margin-bottom: 4px;
+      border-radius: 4px;
+      padding: 2px 6px;
+    }
+
+    .skills-flex {
+      display: flex;
+      flex-wrap: wrap;
+      max-width: 280px;
+    }
+
+    .loading {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 40px;
+      color: #4E5968;
+    }
+
+    .spinner {
+      border: 3px solid #E5E8EB;
+      border-top: 3px solid #0050FF;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 16px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .empty-state {
+      padding: 50px 20px;
+      text-align: center;
+      color: #8B95A1;
+      font-size: 13.5px;
     }
   </style>
 </head>
-<body class="font-sans antialiased text-toss-gray800">
+<body>
 
-  <!-- Header -->
-  <header class="sticky top-0 z-40 bg-white border-b border-toss-gray200 px-6 py-4">
-    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-      <div class="flex items-center gap-3">
-        <!-- Logo Icon -->
-        <div class="p-2.5 bg-toss-lightBlue text-toss-blue rounded-xl">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
-          </svg>
-        </div>
+  <div class="container">
+    <header>
+      <div>
+        <h1>⚖️ 이력서 비교 매트릭스 <span class="badge-top">v2.0 PRO</span></h1>
+        <p>여러 명의 이력서를 한 번에 대조 분석하여 직무 요구 조건(JD) 부합률과 경력 성숙도를 동시에 검토합니다.</p>
+      </div>
+      <div style="font-size: 11px; color: #8B95A1; text-align: right;">
+        로컬 마스킹 상시 동작 중<br><strong>보안 안심 등급</strong>
+      </div>
+    </header>
+
+    <div class="grid">
+      
+      <!-- Left Card: JD & Upload -->
+      <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; gap: 20px;">
         <div>
-          <div class="flex items-center gap-2">
-            <h1 class="text-xl font-bold tracking-tight text-toss-gray900 font-outfit">ShieldResume</h1>
-            <span class="px-2 py-0.5 text-xs font-semibold bg-toss-lightBlue text-toss-blue rounded-full">v1.4.0</span>
-          </div>
-          <p class="text-xs text-toss-gray600 mt-0.5">인사기획팀 내부용 • 개인정보 로컬 마스킹 & 경력 공백기 안심 분석기</p>
-        </div>
-      </div>
-      
-      <!-- API Status / Guide Badge -->
-      <div class="flex items-center gap-2 bg-toss-gray50 border border-toss-gray200 px-4 py-2 rounded-xl">
-        <span class="relative flex h-2.5 w-2.5">
-          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-toss-blue opacity-75"></span>
-          <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-toss-blue"></span>
-        </span>
-        <span class="text-xs font-medium text-toss-gray600">Local 전처리 상시 작동 중</span>
-      </div>
-    </div>
-  </header>
-
-  <!-- Main Container -->
-  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-    
-    <!-- API Key Notice Alert Banner -->
-    <div id="apiKeyWarning" class="hidden mb-6 flex items-start gap-3 p-4 bg-toss-orangeLight border border-amber-200 rounded-2xl text-toss-gray800">
-      <svg class="w-5 h-5 text-toss-orange shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-      </svg>
-      <div class="text-sm">
-        <h4 class="font-bold text-toss-gray900">Gemini API 키 설정 필요</h4>
-        <p class="text-toss-gray600 mt-1 leading-relaxed">
-          서버가 동작 중이지만 아직 실제 AI 분석 API 키가 설정되지 않았습니다. 
-          프로젝트 폴더 내의 <code class="bg-white px-1.5 py-0.5 rounded border font-mono text-xs">.env</code> 파일에 <code class="font-mono text-xs text-toss-orange">GEMINI_API_KEY=내_API_키</code>를 입력한 뒤 서버를 재시작해 주세요. 
-          (현재 화면에 나타나는 결과는 기능 체험을 위한 샘플 데이터입니다.)
-        </p>
-      </div>
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-      
-      <!-- Left Column: File Upload Area -->
-      <section class="lg:col-span-5 flex flex-col gap-6">
-        
-        <!-- Upload Card -->
-        <div class="bg-white border border-toss-gray200 rounded-3xl p-6 shadow-sm">
-          <h2 class="text-lg font-bold text-toss-gray900 mb-2">이력서 파일 업로드 및 JD 대조</h2>
-          <p class="text-sm text-toss-gray600 mb-6">지원자의 이력서 파일(PDF, Word, HWP)과 채용하려는 직무 요건(JD)을 입력하고 분석을 실행하세요.</p>
-          
-          <!-- Drag & Drop Zone -->
-          <div id="dropZone" class="border-2 border-dashed border-toss-gray200 hover:border-toss-blue bg-toss-gray50 hover:bg-toss-lightBlue rounded-2xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200">
-            <input type="file" id="fileInput" accept=".pdf,.docx,.hwp" class="hidden" />
-            
-            <!-- Upload Icon -->
-            <div class="p-4 bg-white shadow-sm rounded-full text-toss-gray600 mb-4 transition-transform duration-200" id="uploadIconWrapper">
-              <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-              </svg>
-            </div>
-            
-            <p class="text-sm font-semibold text-toss-gray800">이력서 파일(PDF, WORD, HWP)을 여기에 놓으세요</p>
-            <p class="text-xs text-toss-gray600 mt-2">또는 클릭하여 파일 선택 (최대 10MB)</p>
-          </div>
-
-          <!-- File info preview -->
-          <div id="fileInfoWrapper" class="hidden mt-4 p-3 bg-toss-gray50 border border-toss-gray200 rounded-xl flex items-center justify-between">
-            <div class="flex items-center gap-2 overflow-hidden">
-              <svg class="w-5 h-5 text-toss-blue shrink-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 012 0h4a1 1 0 110 2H8a1 1 0 01-2-2z" clip-rule="evenodd"></path></svg>
-              <span id="fileNameSpan" class="text-xs font-semibold text-toss-gray800 truncate">resume.docx</span>
-            </div>
-            <button id="removeFileBtn" class="text-toss-gray600 hover:text-red-500 p-1 text-xs">삭제</button>
-          </div>
-
-          <!-- Job Description (JD) Input Area -->
-          <div class="mt-5">
-            <label for="jdInput" class="block text-xs font-bold text-toss-gray800 mb-2">직무 기술서 (JD) 또는 자격 요건</label>
-            <textarea id="jdInput" rows="5" class="w-full p-3.5 text-xs bg-toss-gray50 border border-toss-gray200 rounded-2xl focus:border-toss-blue focus:outline-none resize-none custom-scrollbar leading-relaxed font-sans" placeholder="이곳에 채용 공고나 필수 자격 요건을 입력하세요."></textarea>
-          </div>
-          
-          <button id="analyzeBtn" disabled class="w-full mt-6 py-4 bg-toss-gray200 text-toss-gray600 hover:bg-toss-darkBlue hover:text-white disabled:bg-toss-gray100 disabled:text-toss-gray600 disabled:cursor-not-allowed font-semibold rounded-2xl transition-all duration-200 flex items-center justify-center gap-2 shadow-sm">
-            <span>안전 분석 실행하기</span>
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-            </svg>
-          </button>
-        </div>
-
-        <!-- Processing States Card -->
-        <div id="processingCard" class="hidden bg-white border border-toss-gray200 rounded-3xl p-6 shadow-sm transition-all">
-          <h3 class="text-sm font-bold text-toss-gray900 mb-4">실시간 처리 단계</h3>
-          
-          <!-- Steps Timeline -->
-          <div class="space-y-4">
-            <!-- Step 1 -->
-            <div class="flex gap-3" id="step1">
-              <div class="flex flex-col items-center">
-                <div class="step-icon w-6 h-6 bg-toss-blue text-white rounded-full flex items-center justify-center text-xs font-bold ring-4 ring-toss-lightBlue" id="stepIcon1">1</div>
-                <div class="w-0.5 h-8 bg-toss-gray200 my-1" id="stepLine1"></div>
-              </div>
-              <div>
-                <h4 class="text-xs font-bold text-toss-gray950" id="stepTitle1">이력서 텍스트 추출 완료</h4>
-                <p class="text-[11px] text-toss-gray600 mt-0.5">문서로부터 텍스트 데이터 추출 및 분리</p>
-              </div>
-            </div>
-            
-            <!-- Step 2 -->
-            <div class="flex gap-3" id="step2">
-              <div class="flex flex-col items-center">
-                <div class="step-icon w-6 h-6 bg-toss-gray200 text-toss-gray600 rounded-full flex items-center justify-center text-xs font-bold" id="stepIcon2">2</div>
-                <div class="w-0.5 h-8 bg-toss-gray200 my-1" id="stepLine2"></div>
-              </div>
-              <div>
-                <h4 class="text-xs font-bold text-toss-gray650" id="stepTitle2">로컬 개인정보 마스킹 처리 중</h4>
-                <p class="text-[11px] text-toss-gray600 mt-0.5">전화번호, 이메일, 상세 주소 Regex 치환</p>
-              </div>
-            </div>
-            
-            <!-- Step 3 -->
-            <div class="flex gap-3" id="step3">
-              <div class="flex flex-col items-center">
-                <div class="step-icon w-6 h-6 bg-toss-gray200 text-toss-gray600 rounded-full flex items-center justify-center text-xs font-bold" id="stepIcon3">3</div>
-              </div>
-              <div>
-                <h4 class="text-xs font-bold text-toss-gray650" id="stepTitle3">Gemini API 커리어 데이터 구조화</h4>
-                <p class="text-[11px] text-toss-gray600 mt-0.5">3개월 이상 공백기 산출 및 면접 질문 제안</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Spinner and progress bar -->
-          <div class="mt-6 pt-4 border-t border-toss-gray100">
-            <div class="w-full bg-toss-gray100 rounded-full h-1.5 overflow-hidden">
-              <div id="progressBar" class="bg-toss-blue h-1.5 rounded-full transition-all duration-300" style="width: 10%;"></div>
-            </div>
-            <p id="progressText" class="text-xs text-toss-blue font-semibold mt-2 text-right">대기 중...</p>
-          </div>
-        </div>
-
-        <!-- Security Guide Card -->
-        <div class="bg-white border border-toss-gray200 rounded-3xl p-6 shadow-sm">
-          <h3 class="text-sm font-bold text-toss-gray900 mb-3 flex items-center gap-2">
-            <svg class="w-4 h-4 text-toss-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-            </svg>
-            강력한 로컬 보안 안심 가이드라인
-          </h3>
-          <ul class="space-y-2 text-xs text-toss-gray600 leading-relaxed">
-            <li class="flex items-start gap-1.5">
-              <span class="text-toss-blue font-bold">•</span>
-              <span><strong>이미지 데이터 원천 차단:</strong> 이미지나 사진 파일은 절대 API 전송 바디에 포함하지 않고 순수 텍스트만 추출해 분석합니다.</span>
-            </li>
-            <li class="flex items-start gap-1.5">
-              <span class="text-toss-blue font-bold">•</span>
-              <span><strong>서버 로컬 마스킹:</strong> 외부 LLM API로 데이터를 전송하기 직전에 이메일, 전화번호, 상세 주소를 <code class="bg-toss-gray100 px-1 py-0.5 rounded font-semibold text-toss-gray800">[보안 마스킹]</code>으로 대체하여 개인정보의 유출을 원천 방지합니다.</span>
-            </li>
-            <li class="flex items-start gap-1.5">
-              <span class="text-toss-blue font-bold">•</span>
-              <span><strong>멀티 포맷 완벽 대응:</strong> PDF 뿐만 아니라 MS Word(.docx) 및 한글(.hwp) 문서까지 모두 메모리 내 로컬 모듈로 안전하게 텍스트를 추출합니다.</span>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <!-- Right Column: Results Dashboard -->
-      <section class="lg:col-span-7 flex flex-col gap-6">
-        
-        <!-- Dashboard Header -->
-        <div class="flex items-center justify-between">
-          <h2 class="text-xl font-bold text-toss-gray900 flex items-center gap-2">
-            이력서 분석 결과 대시보드
-            <span id="dashboardModeBadge" class="text-xs font-normal bg-toss-gray200 text-toss-gray600 px-2.5 py-1 rounded-full">가상 샘플 데이터</span>
+          <h2>
+            1. 직무 기술서 (JD) 요건
+            <button class="btn-sample" id="loadSampleJdBtn">기본 샘플 불러오기</button>
           </h2>
-          <button id="resetDemoBtn" class="text-xs font-medium text-toss-blue hover:underline">기본 샘플 보기</button>
+          <textarea id="jdText" placeholder="이곳에 채용하려는 직무의 기술 요구서, 필수 자격 요건, 우대 사항 등을 기입해 주세요."></textarea>
         </div>
 
-        <!-- 0. 직무 기술서 (JD) 매칭률 카드 -->
-        <div id="jdMatchCard" class="bg-white border border-toss-gray200 rounded-3xl p-6 shadow-sm">
-          <h3 class="text-xs font-bold text-toss-gray600 uppercase tracking-wider mb-4">직무 적합성 매칭 매트릭스 (JD 대조)</h3>
-          <div class="flex flex-col sm:flex-row items-stretch gap-6">
-            <!-- Gauge circle or bold text representation -->
-            <div class="flex flex-col items-center justify-center bg-toss-lightBlue text-toss-blue px-6 py-5 rounded-2xl shrink-0 min-w-[125px]">
-              <span class="text-xs font-medium text-toss-blue/80 block mb-1">직무 매칭률</span>
-              <span id="jdMatchRate" class="text-3xl font-black font-outfit">88%</span>
-            </div>
+        <div>
+          <h2>2. 이력서 다중 업로드 (최대 20개)</h2>
+          <div class="dropzone" id="dropzone">
+            <span class="dropzone-icon">📁</span>
+            <p class="main-text">이력서 파일을 마우스로 끌어다 놓으세요</p>
+            <p class="sub-text">PDF, WORD(.docx), 한글(.hwp) 지원 • 중복 업로드 가능</p>
             
-            <!-- Description and progress indicator -->
-            <div class="flex-1 flex flex-col justify-center">
-              <div class="w-full bg-toss-gray100 rounded-full h-2 mb-3 overflow-hidden">
-                <div id="jdMatchProgress" class="bg-toss-blue h-2 rounded-full transition-all duration-500" style="width: 88%;"></div>
-              </div>
-              <p id="jdMatchReason" class="text-xs text-toss-gray800 font-medium leading-relaxed">
-                이력서에 기술된 8년 이상의 사내 교육 기획 및 신입사원 온보딩 경험이 JD의 교육 콘텐츠 개발 및 임직원 리더십 교육 요건과 매우 잘 부합합니다. 다만 에듀텍 직무 중심의 경력으로 인해 일반 대기업 환경의 대단위 인사 제도 기획 면에서는 면접 시 깊이 있는 검증이 필요합니다.
-              </p>
+            <div class="file-list-container" id="fileListContainer">
+              <div id="fileList"></div>
             </div>
           </div>
+          <input type="file" id="fileInput" multiple accept=".pdf,.docx,.hwp" style="display: none;">
         </div>
 
-        <!-- 1. 기본 인적사항 카드 -->
-        <div class="bg-white border border-toss-gray200 rounded-3xl p-6 shadow-sm">
-          <h3 class="text-xs font-bold text-toss-gray600 uppercase tracking-wider mb-4">기본 인적사항 및 직무 기본</h3>
-          
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            
-            <div class="bg-toss-gray50 p-4 rounded-2xl">
-              <span class="text-xs text-toss-gray600 block mb-1">지원자 이름</span>
-              <span id="resName" class="text-lg font-bold text-toss-gray900 font-sans">김지안</span>
-            </div>
-            
-            <div class="bg-toss-gray50 p-4 rounded-2xl">
-              <span class="text-xs text-toss-gray600 block mb-1">출생 및 나이</span>
-              <span id="resAge" class="text-sm font-bold text-toss-gray900">1990년생 (만 36세)</span>
-            </div>
-            
-            <div class="bg-toss-gray50 p-4 rounded-2xl">
-              <span class="text-xs text-toss-gray600 block mb-1">거주지 (시/구)</span>
-              <span id="resLocation" class="text-sm font-bold text-toss-gray900 truncate block">서울시 마포구</span>
-            </div>
-            
-            <div class="bg-toss-gray50 p-4 rounded-2xl">
-              <span class="text-xs text-toss-gray600 block mb-1">총 경력 기간</span>
-              <span id="resTotalExp" class="text-sm font-bold text-toss-blue">8년 4개월</span>
-            </div>
-          </div>
+        <button class="btn" id="uploadBtn" disabled>⚡ 매트릭스 분석 시작</button>
+      </div>
 
-          <div class="mt-4 flex items-center justify-between p-3.5 bg-toss-lightBlue text-toss-blue rounded-2xl">
-            <span class="text-xs font-semibold">각 직장별 평균 이직 주기 (근무 안정성 지표)</span>
-            <span id="resAverageTenure" class="text-sm font-bold">2년 1개월</span>
-          </div>
+      <!-- Right Card: Comparison Matrix -->
+      <div class="matrix-box">
+        <h2>지원자 자격 요건 대조 테이블</h2>
+        
+        <div class="loading" id="loading">
+          <div class="spinner"></div>
+          <p style="font-weight: 600; color: #333D4B;">AI 분석 엔진이 이력서 데이터들을 가공 및 대조하고 있습니다.</p>
+          <p style="font-size: 12px; color: #8B95A1; margin-top: 4px;">개인정보 로컬 스크러빙 및 스키마 유효성 검사 진행 중...</p>
         </div>
 
-        <!-- 2. 공백기 리스크 점검 카드 -->
-        <div id="gapRiskCard" class="border rounded-3xl p-6 shadow-sm transition-all duration-200">
-          <div id="gapHeader" class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-bold text-toss-gray900 flex items-center gap-2">
-              <span id="gapBadge" class="px-2 py-0.5 text-xs font-bold rounded-full"></span>
-              공백기 리스크 점검 (3개월 이상)
-            </h3>
-          </div>
-          
-          <div id="gapContent">
-            <!-- Dynamically populated -->
-          </div>
+        <div class="table-responsive">
+          <table id="resultTable">
+            <thead>
+              <tr>
+                <th>지원자명</th>
+                <th>JD 매칭률</th>
+                <th>총 경력</th>
+                <th>평균 근속</th>
+                <th>핵심 스킬 태그</th>
+                <th>AI 종합 한줄의견</th>
+              </tr>
+            </thead>
+            <tbody id="resultBody">
+              <!-- Empty State by default -->
+              <tr id="emptyRow">
+                <td colspan="6" class="empty-state">
+                  왼쪽 폼에 이력서를 등록하고 분석을 실행하면 이곳에 실시간 대조 매트릭스가 렌더링됩니다.
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-
-        <!-- 3. 핵심 스킬 및 자격증 태그 클라우드 카드 -->
-        <div class="bg-white border border-toss-gray200 rounded-3xl p-6 shadow-sm">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Skills -->
-            <div>
-              <h3 class="text-xs font-bold text-toss-gray600 uppercase tracking-wider mb-3">핵심 역량 / 보유 스킬</h3>
-              <div id="resSkills" class="flex flex-wrap gap-2">
-                <!-- Tags -->
-              </div>
-            </div>
-            
-            <!-- Certifications -->
-            <div>
-              <h3 class="text-xs font-bold text-toss-gray600 uppercase tracking-wider mb-3">취득 자격증</h3>
-              <div id="resCertifications" class="flex flex-wrap gap-2">
-                <!-- Tags -->
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 4. 전 직장별 주요 업무 요약 카드 -->
-        <div class="bg-white border border-toss-gray200 rounded-3xl p-6 shadow-sm">
-          <h3 class="text-sm font-bold text-toss-gray900 mb-4">전 직장 근무 내역 및 요약</h3>
-          
-          <div class="relative pl-6 border-l border-toss-gray200 ml-3 space-y-8" id="careerTimeline">
-            <!-- Timeline elements -->
-          </div>
-        </div>
-
-        <!-- 5. 인사팀/면접관용 맞춤형 면접 추천 질문 -->
-        <div class="bg-white border border-toss-gray200 rounded-3xl p-6 shadow-sm">
-          <div class="flex items-center gap-2 mb-4">
-            <div class="p-1 bg-toss-lightBlue text-toss-blue rounded-lg">
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"></path></svg>
-            </div>
-            <h3 class="text-sm font-bold text-toss-gray900">인사팀 / 면접관 맞춤형 질문 (공백기 및 핵심 이력 검증)</h3>
-          </div>
-          
-          <div class="space-y-4" id="interviewQuestionsWrapper">
-            <!-- Questions list -->
-          </div>
-        </div>
-
-      </section>
+      </div>
 
     </div>
-  </main>
-
-  <footer class="max-w-7xl mx-auto px-6 py-12 border-t border-toss-gray200 mt-16 text-center text-xs text-toss-gray600">
-    <p>© 2026 ShieldResume Project. Designed for Enterprise HR Security Compliance.</p>
-    <p class="mt-2 text-toss-gray600">본 도구는 Node.js 로컬 서버에서 텍스트 전처리(마스킹)가 완전히 수행된 후 안전하게 LLM API를 호출하므로, 지원자의 개인정보가 외부에 유출되지 않습니다.</p>
-  </footer>
+  </div>
 
   <script>
-    // 5. 초기 샘플 데이터 세팅 ('정규직 사내 강사' 가상 지원자)
-    const sampleData = {
-      name: "김지안",
-      age: "1990년생 (만 36세)",
-      location: "서울시 마포구",
-      total_experience: "8년 4개월",
-      average_tenure: "2년 1개월",
-      match_rate: "88%",
-      match_reason: "이력서에 기술된 8년 이상의 사내 교육 기획 및 신입사원 온보딩 경험이 JD의 교육 콘텐츠 개발 및 임직원 리더십 교육 요건과 매우 잘 부합합니다. 다만 에듀텍 직무 중심의 경력으로 인해 일반 대기업 환경의 대단위 인사 제도 기획 면에서는 면접 시 깊이 있는 검증이 필요합니다.",
-      gap_periods: [
-        {
-          period: "2021.03 ~ 2021.11",
-          duration: "8개월"
-        }
-      ],
-      skills: ["사내 교육 기획", "교안 제작", "스피치 코칭", "MS Office", "LMS 운영", "직무 교육 프로세스 설계"],
-      certifications: ["평생교육사 2급", "직업능력개발훈련교사 3급"],
-      career_summary: [
-        {
-          company: "A 기업",
-          period: "2021.12 ~ 2024.08",
-          role: "과장",
-          description: "사내 교육 기획 및 신입사원 온보딩 교육 총괄, 임직원 리더십 교육 과정 개발 및 운영"
-        },
-        {
-          company: "B 스타트업",
-          period: "2019.01 ~ 2021.02",
-          role: "대리",
-          description: "전사 직무 역량 강화 교육 과정 설계 및 강사 활동, 교육 콘텐츠 모듈화 및 LMS 관리"
-        },
-        {
-          company: "C 에듀텍",
-          period: "2015.06 ~ 2018.11",
-          role: "사원/주임",
-          description: "직무 교재 공동 집필 및 개발, 신규 강사진 트레이닝 워크숍 주관 및 강의 운영"
-        }
-      ],
-      interview_questions: [
-        "2021년 3월부터 11월까지 약 8개월간의 공백기가 있으신데, 이 시기 동안 역량 개발이나 이직을 위해 어떤 구체적인 활동과 리프레시 시간을 가지셨는지 설명해 주실 수 있나요?",
-        "에듀텍 교육 개발자에서 기업 내 사내 강사로 직무의 중심을 옮기게 된 구체적인 계기와, 스타트업과 일반 대기업 환경에서 임직원 교육을 기획하고 운영하면서 느꼈던 가장 큰 프로세스의 차이점은 무엇인가요?",
-        "신입사원 온보딩 과정 설계 및 대단위 교육을 단독 총괄하신 경험이 있으신데, 교육 대상자들의 몰입도를 극대화하기 위해 김지안님께서 사용하시는 본인만의 실효성 있는 퍼실리테이션 기법이 있다면 공유해 주세요."
-      ]
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+    const fileListContainer = document.getElementById('fileListContainer');
+    const fileList = document.getElementById('fileList');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const loading = document.getElementById('loading');
+    const resultTable = document.getElementById('resultTable');
+    const resultBody = document.getElementById('resultBody');
+    const emptyRow = document.getElementById('emptyRow');
+    const jdText = document.getElementById('jdText');
+    const loadSampleJdBtn = document.getElementById('loadSampleJdBtn');
+
+    let selectedFiles = [];
+
+    // Sample JD text setting
+    const sampleJd = "사내 임직원 교육 과정(신입사원 온보딩, 직무 교육) 개발 및 사내 강사 육성 총괄.\n임직원 평가 및 교육 콘텐츠 교안 작성 경험 우수자.\n평생교육 관련 라이센스 또는 교육 공학 전공자 우대.";
+    
+    loadSampleJdBtn.addEventListener('click', () => {
+      jdText.value = sampleJd;
+    });
+
+    // Dropzone Events
+    dropzone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.style.background = "#E8F3FF";
+      dropzone.style.borderColor = "#0050FF";
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.style.background = "#F8FAFF";
+      dropzone.style.borderColor = "#0050FF";
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.style.background = "#F8FAFF";
+      handleFiles(e.dataTransfer.files);
+    });
+
+    function handleFiles(files) {
+      const allowedExtensions = ['pdf', 'docx', 'hwp'];
+      const filtered = Array.from(files).filter(file => {
+        const ext = file.name.split('.').pop().toLowerCase();
+        return allowedExtensions.includes(ext);
+      });
+
+      if (filtered.length === 0) return;
+
+      selectedFiles = [...selectedFiles, ...filtered].slice(0, 20); // 최대 20개 고정
+      
+      renderFileList();
+      uploadBtn.disabled = false;
+    }
+
+    function renderFileList() {
+      if (selectedFiles.length > 0) {
+        fileListContainer.style.display = "block";
+        fileList.innerHTML = selectedFiles.map((f, i) => `
+          <div class="file-item">
+            <span class="file-name" title="${f.name}">${f.name}</span>
+            <button onclick="removeFile(event, ${i})" style="background:none; border:none; color:#FF4D4F; cursor:pointer; font-size:11px; font-weight:600;">삭제</button>
+          </div>
+        `).join('');
+      } else {
+        fileListContainer.style.display = "none";
+        fileList.innerHTML = "";
+        uploadBtn.disabled = true;
+      }
+    }
+
+    window.removeFile = function(e, index) {
+      e.stopPropagation();
+      selectedFiles.splice(index, 1);
+      renderFileList();
     };
 
-    // UI Elements
-    const dropZone = document.getElementById('dropZone');
-    const fileInput = document.getElementById('fileInput');
-    const fileInfoWrapper = document.getElementById('fileInfoWrapper');
-    const fileNameSpan = document.getElementById('fileNameSpan');
-    const removeFileBtn = document.getElementById('removeFileBtn');
-    const analyzeBtn = document.getElementById('analyzeBtn');
-    const processingCard = document.getElementById('processingCard');
-    const progressBar = document.getElementById('progressBar');
-    const progressText = document.getElementById('progressText');
-    const apiKeyWarning = document.getElementById('apiKeyWarning');
-    const dashboardModeBadge = document.getElementById('dashboardModeBadge');
-    const resetDemoBtn = document.getElementById('resetDemoBtn');
-    const jdInput = document.getElementById('jdInput');
-
-    // State Variables
-    let selectedFile = null;
-
-    // Default JD value placeholder
-    const defaultJdExample = "사내 임직원 역량 개발을 위한 교육 과정(신입 온보딩, 직무 역량 강화) 기획 및 강사 운영.\n교안 및 교육 콘텐츠 제작 역량 필수.\n평생교육 관련 자격 취득자 우대.";
-    jdInput.value = defaultJdExample;
-
-    // Render Function
-    function renderResult(data, isSample = false) {
-      if (isSample) {
-        dashboardModeBadge.textContent = "가상 샘플 데이터";
-        dashboardModeBadge.className = "text-xs font-normal bg-toss-gray100 text-toss-gray600 px-2.5 py-1 rounded-full";
-      } else {
-        dashboardModeBadge.textContent = "실시간 분석 완료";
-        dashboardModeBadge.className = "text-xs font-bold bg-toss-lightBlue text-toss-blue px-2.5 py-1 rounded-full";
-      }
-
-      // Render JD Matching Card
-      const jdMatchCard = document.getElementById('jdMatchCard');
-      const jdMatchRate = document.getElementById('jdMatchRate');
-      const jdMatchProgress = document.getElementById('jdMatchProgress');
-      const jdMatchReason = document.getElementById('jdMatchReason');
-
-      if (data.match_rate) {
-        jdMatchCard.classList.remove('hidden');
-        jdMatchRate.textContent = data.match_rate;
-        const pct = parseInt(data.match_rate.replace(/[^0-9]/g, '')) || 0;
-        jdMatchProgress.style.width = `${pct}%`;
-        jdMatchReason.textContent = data.match_reason || '분석 이유 요약이 제공되지 않았습니다.';
-      } else {
-        // Fallback when matching is bypassed
-        jdMatchRate.textContent = '0%';
-        jdMatchProgress.style.width = '0%';
-        jdMatchReason.textContent = '직무 기술서 요건이 입력되지 않았거나 대조되지 않았습니다.';
-      }
-
-      document.getElementById('resName').textContent = data.name || '-';
-      document.getElementById('resAge').textContent = data.age || '-';
-      document.getElementById('resLocation').textContent = data.location || '-';
-      document.getElementById('resTotalExp').textContent = data.total_experience || '-';
-      document.getElementById('resAverageTenure').textContent = data.average_tenure || '-';
-
-      const gapRiskCard = document.getElementById('gapRiskCard');
-      const gapBadge = document.getElementById('gapBadge');
-      const gapContent = document.getElementById('gapContent');
-
-      if (data.gap_periods && data.gap_periods.length > 0) {
-        gapRiskCard.className = "bg-toss-orangeLight border border-amber-200 rounded-3xl p-6 shadow-sm transition-all duration-200";
-        gapBadge.textContent = "경고";
-        gapBadge.className = "px-2 py-0.5 text-xs font-bold bg-toss-orange text-white rounded-full";
-        
-        let html = `
-          <div class="flex items-start gap-2.5 mb-4">
-            <svg class="w-5 h-5 text-toss-orange shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-            </svg>
-            <p class="text-sm font-semibold text-toss-gray900">직장 경력 간 3개월 이상의 공백기가 감지되었습니다. 면접을 통해 해당 공백 기간의 공백 사유 및 경험을 정교하게 확인하시기 바랍니다.</p>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-              <thead>
-                <tr class="border-b border-amber-200/50 text-xs font-bold text-toss-gray600">
-                  <th class="py-2.5 px-3">공백기 해당 구간</th>
-                  <th class="py-2.5 px-3 text-right">총 공백 개월 수</th>
-                </tr>
-              </thead>
-              <tbody>
-        `;
-
-        data.gap_periods.forEach(gap => {
-          html += `
-            <tr class="border-b border-amber-200/20 text-sm">
-              <td class="py-3 px-3 font-semibold text-toss-gray900 font-mono">${gap.period}</td>
-              <td class="py-3 px-3 text-right text-toss-orange font-bold font-mono">${gap.duration}</td>
-            </tr>
-          `;
-        });
-
-        html += `
-              </tbody>
-            </table>
-          </div>
-        `;
-        gapContent.innerHTML = html;
-      } else {
-        gapRiskCard.className = "bg-toss-greenLight border border-emerald-200 rounded-3xl p-6 shadow-sm transition-all duration-200";
-        gapBadge.textContent = "정상";
-        gapBadge.className = "px-2 py-0.5 text-xs font-bold bg-toss-green text-white rounded-full";
-
-        gapContent.innerHTML = `
-          <div class="flex items-center gap-3">
-            <div class="p-2 bg-white rounded-full text-toss-green shadow-sm">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
-              </svg>
-            </div>
-            <div>
-              <p class="text-sm font-bold text-toss-gray900">3개월 이상 공백기 없음 (연속 경력)</p>
-              <p class="text-xs text-toss-gray600 mt-1">이력상 3개월 이상 비어 있는 공백 구간이 존재하지 않는 우수한 경력 연속성을 보여줍니다.</p>
-            </div>
-          </div>
-        `;
-      }
-
-      const skillsContainer = document.getElementById('resSkills');
-      skillsContainer.innerHTML = '';
-      if (data.skills && data.skills.length > 0) {
-        data.skills.forEach(skill => {
-          const badge = document.createElement('span');
-          badge.className = "px-3 py-1.5 bg-toss-lightBlue text-toss-blue text-xs font-medium rounded-full";
-          badge.textContent = skill;
-          skillsContainer.appendChild(badge);
-        });
-      } else {
-        skillsContainer.innerHTML = '<span class="text-xs text-toss-gray600">추출된 기술 스킬이 없습니다.</span>';
-      }
-
-      const certsContainer = document.getElementById('resCertifications');
-      certsContainer.innerHTML = '';
-      if (data.certifications && data.certifications.length > 0) {
-        data.certifications.forEach(cert => {
-          const badge = document.createElement('span');
-          badge.className = "px-3 py-1.5 bg-toss-gray100 text-toss-gray600 text-xs font-medium rounded-full border border-toss-gray200";
-          badge.textContent = cert;
-          certsContainer.appendChild(badge);
-        });
-      } else {
-        certsContainer.innerHTML = '<span class="text-xs text-toss-gray600">추출된 자격증 내역이 없습니다.</span>';
-      }
-
-      const timeline = document.getElementById('careerTimeline');
-      timeline.innerHTML = '';
-      if (data.career_summary && data.career_summary.length > 0) {
-        data.career_summary.forEach(job => {
-          const timelineItem = document.createElement('div');
-          timelineItem.className = "relative";
-          
-          timelineItem.innerHTML = `
-            <span class="absolute -left-[31px] top-1.5 bg-white border-2 border-toss-blue w-4 h-4 rounded-full flex items-center justify-center">
-              <span class="w-1.5 h-1.5 bg-toss-blue rounded-full"></span>
-            </span>
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-              <h4 class="text-sm font-bold text-toss-gray950">${job.company}</h4>
-              <span class="text-xs font-semibold text-toss-gray600 font-mono bg-toss-gray50 px-2 py-0.5 rounded border">${job.period}</span>
-            </div>
-            <p class="text-xs font-semibold text-toss-blue mt-1">${job.role || '담당 사원'}</p>
-            <p class="text-xs text-toss-gray600 mt-1.5 leading-relaxed bg-toss-gray50/60 p-3 rounded-xl border border-toss-gray100">${job.description}</p>
-          `;
-          
-          timeline.appendChild(timelineItem);
-        });
-      } else {
-        timeline.innerHTML = '<div class="text-xs text-toss-gray600 pl-4">재직 경력이 감지되지 않았습니다.</div>';
-      }
-
-      const questionsContainer = document.getElementById('interviewQuestionsWrapper');
-      questionsContainer.innerHTML = '';
-      if (data.interview_questions && data.interview_questions.length > 0) {
-        data.interview_questions.forEach((question, index) => {
-          const qBox = document.createElement('div');
-          qBox.className = "p-4 bg-toss-gray50 rounded-2xl border border-toss-gray100 flex gap-3";
-          
-          qBox.innerHTML = `
-            <span class="text-xs font-black text-toss-blue font-outfit uppercase bg-toss-lightBlue shrink-0 w-6 h-6 rounded-lg flex items-center justify-center">Q${index + 1}</span>
-            <p class="text-xs text-toss-gray800 font-medium leading-relaxed">${question}</p>
-          `;
-          
-          questionsContainer.appendChild(qBox);
-        });
-      } else {
-        questionsContainer.innerHTML = '<p class="text-xs text-toss-gray600">추천 면접 질문이 생성되지 않았습니다.</p>';
-      }
-    }
-
-    // Drag and Drop Events
-    dropZone.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      dropZone.classList.remove('border-toss-gray200', 'bg-toss-gray50');
-      dropZone.classList.add('border-toss-blue', 'bg-toss-lightBlue');
-      document.getElementById('uploadIconWrapper').classList.add('scale-110', 'text-toss-blue');
-    });
-
-    dropZone.addEventListener('dragleave', (e) => {
-      e.preventDefault();
-      dropZone.classList.remove('border-toss-blue', 'bg-toss-lightBlue');
-      dropZone.classList.add('border-toss-gray200', 'bg-toss-gray50');
-      document.getElementById('uploadIconWrapper').classList.remove('scale-110', 'text-toss-blue');
-    });
-
-    dropZone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      dropZone.classList.remove('border-toss-blue', 'bg-toss-lightBlue');
-      dropZone.classList.add('border-toss-gray200', 'bg-toss-gray50');
-      document.getElementById('uploadIconWrapper').classList.remove('scale-110', 'text-toss-blue');
-      
-      const files = e.dataTransfer.files;
-      if (files.length > 0) {
-        handleFileSelect(files[0]);
-      }
-    });
-
-    dropZone.addEventListener('click', () => {
-      fileInput.click();
-    });
-
-    fileInput.addEventListener('change', (e) => {
-      if (e.target.files.length > 0) {
-        handleFileSelect(e.target.files[0]);
-      }
-    });
-
-    function handleFileSelect(file) {
-      const fileName = file.name;
-      const ext = fileName.split('.').pop().toLowerCase();
-      const allowedExtensions = ['pdf', 'docx', 'hwp'];
-      
-      if (!allowedExtensions.includes(ext)) {
-        alert('이력서 파일은 PDF, WORD(.docx), 한글(.hwp) 포맷만 가능합니다.');
-        return;
-      }
-      
-      selectedFile = file;
-      fileNameSpan.textContent = `${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
-      fileInfoWrapper.classList.remove('hidden');
-      analyzeBtn.disabled = false;
-      analyzeBtn.className = "w-full mt-6 py-4 bg-toss-blue text-white hover:bg-toss-darkBlue font-semibold rounded-2xl transition-all duration-200 flex items-center justify-center gap-2 shadow-sm cursor-pointer";
-    }
-
-    removeFileBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      resetUpload();
-    });
-
-    function resetUpload() {
-      selectedFile = null;
-      fileInput.value = '';
-      fileInfoWrapper.classList.add('hidden');
-      analyzeBtn.disabled = true;
-      analyzeBtn.className = "w-full mt-6 py-4 bg-toss-gray200 text-toss-gray600 hover:bg-toss-darkBlue hover:text-white disabled:bg-toss-gray100 disabled:text-toss-gray600 disabled:cursor-not-allowed font-semibold rounded-2xl transition-all duration-200 flex items-center justify-center gap-2 shadow-sm";
-      processingCard.classList.add('hidden');
-    }
-
-    resetDemoBtn.addEventListener('click', () => {
-      jdInput.value = defaultJdExample;
-      renderResult(sampleData, true);
-    });
-
-    // API 전송 및 분석 실행
-    analyzeBtn.addEventListener('click', async () => {
-      if (!selectedFile) return;
+    // Form Submit API Analysis
+    uploadBtn.addEventListener('click', async () => {
+      if (selectedFiles.length === 0) return;
 
       const formData = new FormData();
-      formData.append('resume', selectedFile);
-      formData.append('jdText', jdInput.value); // JD 데이터 전송 추가
+      formData.append('jdText', jdText.value);
+      selectedFiles.forEach(file => {
+        formData.append('resumes', file);
+      });
 
-      processingCard.classList.remove('hidden');
-      setStepState(1, 'active', '이력서 파일 업로드 및 분석 요청 중...');
-      setStepState(2, 'waiting', '대기 중');
-      setStepState(3, 'waiting', '대기 중');
-      updateProgress(15, '이력서 업로드 완료 및 서버 분석 요청 중...');
+      // UI Loading view
+      loading.style.display = "flex";
+      if (emptyRow) emptyRow.style.display = "none";
+      
+      // Clear previous body records
+      resultBody.innerHTML = "";
+      uploadBtn.disabled = true;
 
       try {
-        setStepState(1, 'done', '이력서 텍스트 추출 완료');
-        setStepState(2, 'active', '로컬 개인정보 마스킹 처리 중...');
-        updateProgress(45, '서버 내 텍스트 마스킹 정규식 스크러빙 진행 중...');
-
         const response = await fetch('/api/analyze', {
           method: 'POST',
           body: formData
         });
 
-        setStepState(2, 'done', '로컬 개인정보 마스킹 완료 (전화/이메일/주소 차단)');
-        setStepState(3, 'active', 'Gemini AI 커리어 구조화 및 JD 대조 분석 중...');
-        updateProgress(75, 'Gemini 2.5 Flash를 이용한 매칭도 연산 및 공백기 산출 중...');
+        const data = await response.json();
 
-        const result = await response.json();
-
-        if (!response.ok) {
-          throw new Error(result.error || '이력서 분석에 실패했습니다.');
+        if (data.error) {
+          alert(data.error);
+          return;
         }
 
-        setStepState(3, 'done', 'Gemini API 직무 매칭 및 데이터 구조화 성공');
-        updateProgress(100, '모든 분석이 완료되었습니다!');
-        
-        setTimeout(() => {
-          renderResult(result, false);
-          processingCard.classList.add('hidden');
-        }, 800);
+        if (data.results && data.results.length > 0) {
+          data.results.forEach(res => {
+            const tr = document.createElement('tr');
+            
+            // 오류 파일인 경우 행 경고색 표시
+            const isError = res.match_rate === '오류';
+            if (isError) {
+              tr.className = "row-error";
+            }
+
+            // 매칭 점수별 뱃지 컬러링
+            let badgeClass = "badge-match-low";
+            const numScore = parseInt(res.match_rate) || 0;
+            if (isError) {
+              badgeClass = "badge-match-error";
+            } else if (numScore >= 80) {
+              badgeClass = "badge-match-high";
+            } else if (numScore >= 50) {
+              badgeClass = "badge-match-medium";
+            }
+
+            // 스킬칩 매칭
+            const skillsHtml = res.skills && res.skills.length > 0 
+              ? res.skills.map(s => `<span class="badge-skill">${s}</span>`).join('') 
+              : '-';
+
+            tr.innerHTML = `
+              <td style="font-weight: 600; color: #191F28;">${res.name}</td>
+              <td><span class="badge ${badgeClass}">${res.match_rate}</span></td>
+              <td style="font-weight: 500;">${res.total_experience || '-'}</td>
+              <td>${res.average_tenure || '-'}</td>
+              <td><div class="skills-flex">${skillsHtml}</div></td>
+              <td style="color: #4E5968; font-size: 12.5px; max-width: 320px; line-height: 1.5;">${res.summary}</td>
+            `;
+
+            resultBody.appendChild(tr);
+          });
+        } else {
+          resultBody.innerHTML = `
+            <tr>
+              <td colspan="6" class="empty-state">분석 결과 데이터가 올바르게 전송되지 않았습니다.</td>
+            </tr>
+          `;
+        }
 
       } catch (err) {
         console.error(err);
-        alert(err.message);
-        
-        updateProgress(0, '에러 발생');
-        setStepState(1, 'error', '처리 도중 실패');
-        setStepState(2, 'error', '처리 도중 실패');
-        setStepState(3, 'error', '처리 도중 실패');
-        
-        if (err.message.includes('API 키') || err.message.includes('API key')) {
-          apiKeyWarning.classList.remove('hidden');
-          apiKeyWarning.scrollIntoView({ behavior: 'smooth' });
-        }
+        alert('서버로부터 비교 매트릭스 데이터를 가져오는 도중 통신 오류가 발생했습니다.');
+        resultBody.innerHTML = `
+          <tr>
+            <td colspan="6" class="empty-state" style="color: #FF4D4F;">통신 에러 발생</td>
+          </tr>
+        `;
+      } finally {
+        loading.style.display = "none";
+        uploadBtn.disabled = false;
       }
-    });
-
-    function updateProgress(percentage, text) {
-      progressBar.style.width = `${percentage}%`;
-      progressText.textContent = text;
-    }
-
-    function setStepState(stepNum, state, message) {
-      const stepIcon = document.getElementById(`stepIcon${stepNum}`);
-      const stepTitle = document.getElementById(`stepTitle${stepNum}`);
-      const stepLine = document.getElementById(`stepLine${stepNum}`);
-      
-      if (state === 'active') {
-        stepIcon.className = "step-icon w-6 h-6 bg-toss-blue text-white rounded-full flex items-center justify-center text-xs font-bold ring-4 ring-toss-lightBlue";
-        stepIcon.innerHTML = `<span class="animate-pulse">${stepNum}</span>`;
-        if (stepTitle) {
-          stepTitle.className = "text-xs font-bold text-toss-blue";
-          stepTitle.textContent = message;
-        }
-        if (stepLine) stepLine.className = "w-0.5 h-8 bg-toss-gray200 my-1";
-      } else if (state === 'done') {
-        stepIcon.className = "step-icon w-6 h-6 bg-toss-green text-white rounded-full flex items-center justify-center text-xs font-bold";
-        stepIcon.innerHTML = `✓`;
-        if (stepTitle) {
-          stepTitle.className = "text-xs font-bold text-toss-gray800";
-          stepTitle.textContent = message;
-        }
-        if (stepLine) stepLine.className = "w-0.5 h-8 bg-toss-green my-1";
-      } else if (state === 'error') {
-        stepIcon.className = "step-icon w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-bold";
-        stepIcon.innerHTML = `!`;
-        if (stepTitle) {
-          stepTitle.className = "text-xs font-bold text-red-500";
-          stepTitle.textContent = message;
-        }
-        if (stepLine) stepLine.className = "w-0.5 h-8 bg-red-200 my-1";
-      } else { // waiting
-        stepIcon.className = "step-icon w-6 h-6 bg-toss-gray200 text-toss-gray600 rounded-full flex items-center justify-center text-xs font-bold";
-        stepIcon.innerHTML = stepNum;
-        if (stepTitle) {
-          stepTitle.className = "text-xs font-bold text-toss-gray600";
-          stepTitle.textContent = message;
-        }
-        if (stepLine) stepLine.className = "w-0.5 h-8 bg-toss-gray200 my-1";
-      }
-    }
-
-    // Init: Load Sample Data
-    window.addEventListener('DOMContentLoaded', () => {
-      renderResult(sampleData, true);
-      
-      fetch('/api/analyze', { method: 'POST' })
-        .then(res => res.json())
-        .then(data => {
-          if (data.error && data.error.includes('API 키')) {
-            apiKeyWarning.classList.remove('hidden');
-          }
-        })
-        .catch(() => {});
     });
   </script>
 </body>
