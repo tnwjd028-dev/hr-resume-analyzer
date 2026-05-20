@@ -148,13 +148,13 @@
 
     textarea {
       width: 100%;
-      height: 180px;
-      padding: 16px;
-      border-radius: 14px;
+      height: 70px;
+      padding: 12px;
+      border-radius: 10px;
       border: 1px solid #E5E8EB;
       background: #F9FAFB;
-      font-size: 13px;
-      line-height: 1.6;
+      font-size: 12.5px;
+      line-height: 1.5;
       resize: none;
       outline: none;
       color: #333D4B;
@@ -165,6 +165,36 @@
       border-color: #0050FF;
       background: #FFFFFF;
       box-shadow: 0 0 0 3px rgba(0, 80, 255, 0.08);
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #E5E8EB;
+      background: #F9FAFB;
+      font-size: 12.5px;
+      outline: none;
+      color: #333D4B;
+      transition: all 0.2s ease;
+    }
+
+    .form-input:focus {
+      border-color: #0050FF;
+      background: #FFFFFF;
+      box-shadow: 0 0 0 3px rgba(0, 80, 255, 0.08);
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #4E5968;
+      margin-bottom: 5px;
     }
 
     /* 드롭존 및 업로드 시스템 */
@@ -648,11 +678,32 @@
         <!-- Left: Form -->
         <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; gap: 20px;">
           <div>
-            <h2>
+            <h2 style="margin-bottom: 15px;">
               직무 기술서 (JD) 요건 설정
               <button class="btn-sample" id="loadSampleJdBtnMatrix">샘플 불러오기</button>
             </h2>
-            <textarea id="jdTextMatrix" placeholder="이곳에 채용하려는 직무의 기술 요구서, 필수 자격 요건, 우대 사항 등을 기입해 주세요."></textarea>
+            <div class="form-group">
+              <label class="form-label">[주요 업무]</label>
+              <textarea id="jdDutiesMatrix" placeholder="예: 웹 백엔드 시스템 개발 및 운영"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">[필수 요건]</label>
+              <textarea id="jdRequirementsMatrix" placeholder="예: Node.js 개발 경력자, 컴퓨터공학 전공자"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">[우대 사항]</label>
+              <textarea id="jdPreferencesMatrix" placeholder="예: AWS 클라우드 경험자, 보안 솔루션 도메인 경험자"></textarea>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <div class="form-group">
+                <label class="form-label">[필요 경력 (최소 년수)]</label>
+                <input type="number" id="jdExpYearsMatrix" class="form-input" placeholder="예: 3">
+              </div>
+              <div class="form-group">
+                <label class="form-label">[참고 나이 (제한 나이)]</label>
+                <input type="number" id="jdAgeLimitMatrix" class="form-input" placeholder="예: 35">
+              </div>
+            </div>
           </div>
 
           <div>
@@ -718,11 +769,32 @@
         <!-- Left: Upload & JD -->
         <div class="card" style="display: flex; flex-direction: column; gap: 20px; height: fit-content;">
           <div>
-            <h2>
+            <h2 style="margin-bottom: 15px;">
               직무 기술서 (JD) 요건
               <button class="btn-sample" id="loadSampleJdBtnSingle">샘플 불러오기</button>
             </h2>
-            <textarea id="jdTextSingle" placeholder="이곳에 채용하려는 직무의 기술 요구서, 필수 자격 요건 등을 기입해 주세요."></textarea>
+            <div class="form-group">
+              <label class="form-label">[주요 업무]</label>
+              <textarea id="jdDutiesSingle" placeholder="예: 웹 백엔드 시스템 개발 및 운영"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">[필수 요건]</label>
+              <textarea id="jdRequirementsSingle" placeholder="예: Node.js 개발 경력자, 컴퓨터공학 전공자"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">[우대 사항]</label>
+              <textarea id="jdPreferencesSingle" placeholder="예: AWS 클라우드 경험자, 보안 솔루션 도메인 경험자"></textarea>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <div class="form-group">
+                <label class="form-label">[필요 경력 (최소 년수)]</label>
+                <input type="number" id="jdExpYearsSingle" class="form-input" placeholder="예: 3">
+              </div>
+              <div class="form-group">
+                <label class="form-label">[참고 나이 (제한 나이)]</label>
+                <input type="number" id="jdAgeLimitSingle" class="form-input" placeholder="예: 35">
+              </div>
+            </div>
           </div>
 
           <div>
@@ -878,13 +950,27 @@
     const resultTableMatrix = document.getElementById('resultTableMatrix');
     const resultBodyMatrix = document.getElementById('resultBodyMatrix');
     const emptyRowMatrix = document.getElementById('emptyRowMatrix');
-    const jdTextMatrix = document.getElementById('jdTextMatrix');
+    const jdDutiesMatrix = document.getElementById('jdDutiesMatrix');
+    const jdRequirementsMatrix = document.getElementById('jdRequirementsMatrix');
+    const jdPreferencesMatrix = document.getElementById('jdPreferencesMatrix');
+    const jdExpYearsMatrix = document.getElementById('jdExpYearsMatrix');
+    const jdAgeLimitMatrix = document.getElementById('jdAgeLimitMatrix');
     const loadSampleJdBtnMatrix = document.getElementById('loadSampleJdBtnMatrix');
 
-    const sampleJdContent = "사내 임직원 역량 강화를 위한 사내 교육 기획 및 신입사원 온보딩 콘텐츠 제작.\nLMS 시스템 운영 및 교안 공동 개발.\n교육학 전공자 또는 HRD 직무 경력 3년 이상 우대.";
+    const sampleJdData = {
+      duties: "사내 임직원 역량 강화를 위한 사내 교육 기획 및 신입사원 온보딩 콘텐츠 제작, LMS 운영",
+      requirements: "HRD 직무 경력 3년 이상, 교안 설계 및 교육 기획 능력 보유자",
+      preferences: "교육학 전공자, 평생교육사 자격증 소지자, IT 스타트업 온보딩 경험자",
+      expYears: 3,
+      ageLimit: 38
+    };
 
     loadSampleJdBtnMatrix.addEventListener('click', () => {
-      jdTextMatrix.value = sampleJdContent;
+      jdDutiesMatrix.value = sampleJdData.duties;
+      jdRequirementsMatrix.value = sampleJdData.requirements;
+      jdPreferencesMatrix.value = sampleJdData.preferences;
+      jdExpYearsMatrix.value = sampleJdData.expYears;
+      jdAgeLimitMatrix.value = sampleJdData.ageLimit;
     });
 
     let selectedMatrixFiles = [];
@@ -941,7 +1027,11 @@
       if (selectedMatrixFiles.length === 0) return;
 
       const formData = new FormData();
-      formData.append('jdText', jdTextMatrix.value);
+      formData.append('jdDuties', jdDutiesMatrix.value);
+      formData.append('jdRequirements', jdRequirementsMatrix.value);
+      formData.append('jdPreferences', jdPreferencesMatrix.value);
+      formData.append('jdExpYears', jdExpYearsMatrix.value);
+      formData.append('jdAgeLimit', jdAgeLimitMatrix.value);
       selectedMatrixFiles.forEach(file => formData.append('resumes', file));
 
       loadingMatrix.style.display = "flex";
@@ -1019,7 +1109,13 @@
         </div>
       `;
       uploadBtnSingle.disabled = false;
-      jdTextSingle.value = jdTextMatrix.value; // JD 텍스트 동기화
+      
+      // 5개 요건값 동기화
+      jdDutiesSingle.value = jdDutiesMatrix.value;
+      jdRequirementsSingle.value = jdRequirementsMatrix.value;
+      jdPreferencesSingle.value = jdPreferencesMatrix.value;
+      jdExpYearsSingle.value = jdExpYearsMatrix.value;
+      jdAgeLimitSingle.value = jdAgeLimitMatrix.value;
 
       // 자동 분석 트리거
       uploadBtnSingle.click();
@@ -1036,12 +1132,20 @@
     const loadingSingle = document.getElementById('loadingSingle');
     const emptySingleState = document.getElementById('emptySingleState');
     const activeSingleDashboard = document.getElementById('activeSingleDashboard');
-    const jdTextSingle = document.getElementById('jdTextSingle');
+    const jdDutiesSingle = document.getElementById('jdDutiesSingle');
+    const jdRequirementsSingle = document.getElementById('jdRequirementsSingle');
+    const jdPreferencesSingle = document.getElementById('jdPreferencesSingle');
+    const jdExpYearsSingle = document.getElementById('jdExpYearsSingle');
+    const jdAgeLimitSingle = document.getElementById('jdAgeLimitSingle');
     const loadSampleJdBtnSingle = document.getElementById('loadSampleJdBtnSingle');
     const loadDemoSingleBtn = document.getElementById('loadDemoSingleBtn');
 
     loadSampleJdBtnSingle.addEventListener('click', () => {
-      jdTextSingle.value = sampleJdContent;
+      jdDutiesSingle.value = sampleJdData.duties;
+      jdRequirementsSingle.value = sampleJdData.requirements;
+      jdPreferencesSingle.value = sampleJdData.preferences;
+      jdExpYearsSingle.value = sampleJdData.expYears;
+      jdAgeLimitSingle.value = sampleJdData.ageLimit;
     });
 
     let selectedSingleFile = null;
@@ -1125,7 +1229,11 @@
       if (!selectedSingleFile) return;
 
       const formData = new FormData();
-      formData.append('jdText', jdTextSingle.value);
+      formData.append('jdDuties', jdDutiesSingle.value);
+      formData.append('jdRequirements', jdRequirementsSingle.value);
+      formData.append('jdPreferences', jdPreferencesSingle.value);
+      formData.append('jdExpYears', jdExpYearsSingle.value);
+      formData.append('jdAgeLimit', jdAgeLimitSingle.value);
       formData.append('resume', selectedSingleFile);
 
       loadingSingle.style.display = "flex";
