@@ -79,7 +79,7 @@ function maskPersonalInfo(text) {
 }
 
 /**
- * HWP 5.0 OLE 파일 텍스트 추출 로컬 파싱 함수 (압축 데이터 해제 포함)
+ * HWP 5.0 OLE 파일 텍스트 추출 로컬 파싱 함수
  * @param {Buffer} buffer HWP 파일 버퍼
  * @returns {string} 추출 및 정제된 한글/영문 텍스트
  */
@@ -170,6 +170,9 @@ app.post('/api/analyze', upload.single('resume'), async (req, res) => {
       });
     }
 
+    // 폼 데이터로부터 jdText 추출
+    const jdText = req.body.jdText || '';
+
     const ext = path.extname(req.file.originalname).toLowerCase();
     console.log(`[INFO] 이력서 분석 시작: ${req.file.originalname} (${req.file.size} bytes, 포맷: ${ext})`);
 
@@ -221,27 +224,36 @@ app.post('/api/analyze', upload.single('resume'), async (req, res) => {
 
     const systemPrompt = `
 당신은 기업의 전문 인사기획팀 소속 커리어 분석관 및 채용 전문가입니다.
-지원자의 이력서 텍스트(개인정보가 마스킹된 상태)를 분석하여 경력 구조를 체계적으로 파악하고, 직장 간의 공백기를 계산하며, 맞춤형 질문을 도출해야 합니다.
+지원자의 이력서 텍스트(개인정보가 마스킹된 상태)를 분석하여 경력 구조를 체계적으로 파악하고, 직장 간의 공백기를 계산하며, 제공된 직무 기술서(JD)와 이력서를 정밀 대조하여 직무 매칭률을 산출해야 합니다.
 
 다음 규칙을 엄격하게 준수하여 분석을 수행해 주세요:
-1. 'gap_periods' (공백기 분석):
+1. 'match_rate' (직무 매칭률) 및 'match_reason' (매칭 사유):
+   - 제공된 [직무 기술서]의 필수 요건 및 우대 사항과 [이력서 텍스트]를 정밀 비교하여 직무 매칭률(match_rate)과 구체적인 매칭 사유(match_reason)를 산출해 주세요.
+   - match_rate는 '85%'와 같이 0%에서 100% 사이의 백분율 형식 문자열이어야 합니다.
+   - match_reason은 이력서와 JD를 대조했을 때의 강점과 부족한 점을 요약한 평가 내용을 한국어로 작성해 주세요. 만약 [직무 기술서] 요건이 비어 있는 경우 match_rate는 '0%', match_reason은 '직무 기술서(JD) 요건이 입력되지 않았습니다.'로 응답하세요.
+2. 'gap_periods' (공백기 분석):
    - 직장 간의 재직 기간 사이에 발생한 공백이 "3개월 이상"인 구간을 모두 찾으세요.
    - 예: 이전 직장 퇴사일이 2021년 2월이고 다음 직장 입사일이 2021년 10월이면 약 8개월의 공백기가 존재하므로, 이를 [{"period": "2021.03 ~ 2021.10", "duration": "8개월"}] 형태로 포함해야 합니다.
    - 날짜가 겹치거나 공백이 3개월 미만이면 공백기 리스트에 추가하지 마십시오. 공백기가 없으면 빈 배열([])을 반환합니다.
-2. 'average_tenure' (평균 이직 주기):
+3. 'average_tenure' (평균 이직 주기):
    - 각 직장별 재직 기간의 평균을 구하세요. (예: 1개 직장에 평균적으로 머무는 기간. 예: "1년 6개월", "2년 4개월" 등)
-3. 'total_experience' (총 경력 기간):
+4. 'total_experience' (총 경력 기간):
    - 중복되지 않는 모든 재직 기간을 합산한 총 경력을 명확한 문자열 형식으로 구하세요. (예: "4년 2개월", "8년 10개월" 등)
-4. 'interview_questions' (추천 면접 질문):
+5. 'interview_questions' (추천 면접 질문):
    - 이력서 기반의 맞춤형 면접 추천 질문 3가지를 도출하세요.
    - 만약 3개월 이상의 공백기가 감지되었다면, 그중 최소한 하나 이상의 질문은 공백기 사유 검증 질문(예: "공백기 동안 어떤 경험/활동을 했는지")이어야 합니다.
-5. 'location': 거주지를 시/구 단위까지만 추출하십시오. 예: "서울시 마포구", "경기도 성남시". 상세 정보는 제외합니다.
-6. 'age': 출생연도를 추출하고, 현재 연도(2026년) 기준 나이를 계산해 기재하십시오. 예: "1992년생 (만 34세)"
-7. 마스킹 가이드라인: 전달된 텍스트 중 "[전화번호 보안 마스킹]" 또는 "[이메일 보안 마스킹]", "[상세주소 보안 마스킹]"으로 표시된 부분은 수정하거나 추측하여 복원하지 말고 그대로 보존하거나 공백으로 처리하세요.
+6. 'location': 거주지를 시/구 단위까지만 추출하십시오. 예: "서울시 마포구", "경기도 성남시". 상세 정보는 제외합니다.
+7. 'age': 출생연도를 추출하고, 현재 연도(2026년) 기준 나이를 계산해 기재하십시오. 예: "1992년생 (만 34세)"
+8. 마스킹 가이드라인: 전달된 텍스트 중 "[전화번호 보안 마스킹]" 또는 "[이메일 보안 마스킹]", "[상세주소 보안 마스킹]"으로 표시된 부분은 수정하거나 추측하여 복원하지 말고 그대로 보존하거나 공백으로 처리하세요.
 
 제출된 이력서 데이터:
 """
 ${maskedText}
+"""
+
+제출된 직무 기술서(JD):
+"""
+${jdText}
 """
 `;
 
@@ -254,6 +266,8 @@ ${maskedText}
         location: { type: "STRING" },
         total_experience: { type: "STRING" },
         average_tenure: { type: "STRING" },
+        match_rate: { type: "STRING" },
+        match_reason: { type: "STRING" },
         gap_periods: {
           type: "ARRAY",
           items: {
@@ -284,11 +298,12 @@ ${maskedText}
       },
       required: [
         "name", "age", "location", "total_experience", "average_tenure",
-        "gap_periods", "skills", "certifications", "career_summary", "interview_questions"
+        "match_rate", "match_reason", "gap_periods", "skills", "certifications",
+        "career_summary", "interview_questions"
       ]
     };
 
-    console.log('[INFO] Gemini API 호출 중...');
+    console.log('[INFO] Gemini API 호출 중 (직무 대조 포함)...');
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: systemPrompt,

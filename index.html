@@ -73,7 +73,7 @@
         <div>
           <div class="flex items-center gap-2">
             <h1 class="text-xl font-bold tracking-tight text-toss-gray900 font-outfit">ShieldResume</h1>
-            <span class="px-2 py-0.5 text-xs font-semibold bg-toss-lightBlue text-toss-blue rounded-full">v1.3.0</span>
+            <span class="px-2 py-0.5 text-xs font-semibold bg-toss-lightBlue text-toss-blue rounded-full">v1.4.0</span>
           </div>
           <p class="text-xs text-toss-gray600 mt-0.5">인사기획팀 내부용 • 개인정보 로컬 마스킹 & 경력 공백기 안심 분석기</p>
         </div>
@@ -115,8 +115,8 @@
         
         <!-- Upload Card -->
         <div class="bg-white border border-toss-gray200 rounded-3xl p-6 shadow-sm">
-          <h2 class="text-lg font-bold text-toss-gray900 mb-2">이력서 파일 업로드</h2>
-          <p class="text-sm text-toss-gray600 mb-6">지원자의 이력서 파일(PDF, Word, HWP)을 드래그하여 업로드하면, 즉시 로컬 메모리상에서 연락처와 이메일, 주소를 마스킹한 후 경력을 구조화합니다.</p>
+          <h2 class="text-lg font-bold text-toss-gray900 mb-2">이력서 파일 업로드 및 JD 대조</h2>
+          <p class="text-sm text-toss-gray600 mb-6">지원자의 이력서 파일(PDF, Word, HWP)과 채용하려는 직무 요건(JD)을 입력하고 분석을 실행하세요.</p>
           
           <!-- Drag & Drop Zone -->
           <div id="dropZone" class="border-2 border-dashed border-toss-gray200 hover:border-toss-blue bg-toss-gray50 hover:bg-toss-lightBlue rounded-2xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200">
@@ -140,6 +140,12 @@
               <span id="fileNameSpan" class="text-xs font-semibold text-toss-gray800 truncate">resume.docx</span>
             </div>
             <button id="removeFileBtn" class="text-toss-gray600 hover:text-red-500 p-1 text-xs">삭제</button>
+          </div>
+
+          <!-- Job Description (JD) Input Area -->
+          <div class="mt-5">
+            <label for="jdInput" class="block text-xs font-bold text-toss-gray800 mb-2">직무 기술서 (JD) 또는 자격 요건</label>
+            <textarea id="jdInput" rows="5" class="w-full p-3.5 text-xs bg-toss-gray50 border border-toss-gray200 rounded-2xl focus:border-toss-blue focus:outline-none resize-none custom-scrollbar leading-relaxed font-sans" placeholder="이곳에 채용 공고나 필수 자격 요건을 입력하세요."></textarea>
           </div>
           
           <button id="analyzeBtn" disabled class="w-full mt-6 py-4 bg-toss-gray200 text-toss-gray600 hover:bg-toss-darkBlue hover:text-white disabled:bg-toss-gray100 disabled:text-toss-gray600 disabled:cursor-not-allowed font-semibold rounded-2xl transition-all duration-200 flex items-center justify-center gap-2 shadow-sm">
@@ -236,6 +242,28 @@
             <span id="dashboardModeBadge" class="text-xs font-normal bg-toss-gray200 text-toss-gray600 px-2.5 py-1 rounded-full">가상 샘플 데이터</span>
           </h2>
           <button id="resetDemoBtn" class="text-xs font-medium text-toss-blue hover:underline">기본 샘플 보기</button>
+        </div>
+
+        <!-- 0. 직무 기술서 (JD) 매칭률 카드 -->
+        <div id="jdMatchCard" class="bg-white border border-toss-gray200 rounded-3xl p-6 shadow-sm">
+          <h3 class="text-xs font-bold text-toss-gray600 uppercase tracking-wider mb-4">직무 적합성 매칭 매트릭스 (JD 대조)</h3>
+          <div class="flex flex-col sm:flex-row items-stretch gap-6">
+            <!-- Gauge circle or bold text representation -->
+            <div class="flex flex-col items-center justify-center bg-toss-lightBlue text-toss-blue px-6 py-5 rounded-2xl shrink-0 min-w-[125px]">
+              <span class="text-xs font-medium text-toss-blue/80 block mb-1">직무 매칭률</span>
+              <span id="jdMatchRate" class="text-3xl font-black font-outfit">88%</span>
+            </div>
+            
+            <!-- Description and progress indicator -->
+            <div class="flex-1 flex flex-col justify-center">
+              <div class="w-full bg-toss-gray100 rounded-full h-2 mb-3 overflow-hidden">
+                <div id="jdMatchProgress" class="bg-toss-blue h-2 rounded-full transition-all duration-500" style="width: 88%;"></div>
+              </div>
+              <p id="jdMatchReason" class="text-xs text-toss-gray800 font-medium leading-relaxed">
+                이력서에 기술된 8년 이상의 사내 교육 기획 및 신입사원 온보딩 경험이 JD의 교육 콘텐츠 개발 및 임직원 리더십 교육 요건과 매우 잘 부합합니다. 다만 에듀텍 직무 중심의 경력으로 인해 일반 대기업 환경의 대단위 인사 제도 기획 면에서는 면접 시 깊이 있는 검증이 필요합니다.
+              </p>
+            </div>
+          </div>
         </div>
 
         <!-- 1. 기본 인적사항 카드 -->
@@ -347,6 +375,8 @@
       location: "서울시 마포구",
       total_experience: "8년 4개월",
       average_tenure: "2년 1개월",
+      match_rate: "88%",
+      match_reason: "이력서에 기술된 8년 이상의 사내 교육 기획 및 신입사원 온보딩 경험이 JD의 교육 콘텐츠 개발 및 임직원 리더십 교육 요건과 매우 잘 부합합니다. 다만 에듀텍 직무 중심의 경력으로 인해 일반 대기업 환경의 대단위 인사 제도 기획 면에서는 면접 시 깊이 있는 검증이 필요합니다.",
       gap_periods: [
         {
           period: "2021.03 ~ 2021.11",
@@ -395,9 +425,14 @@
     const apiKeyWarning = document.getElementById('apiKeyWarning');
     const dashboardModeBadge = document.getElementById('dashboardModeBadge');
     const resetDemoBtn = document.getElementById('resetDemoBtn');
+    const jdInput = document.getElementById('jdInput');
 
     // State Variables
     let selectedFile = null;
+
+    // Default JD value placeholder
+    const defaultJdExample = "사내 임직원 역량 개발을 위한 교육 과정(신입 온보딩, 직무 역량 강화) 기획 및 강사 운영.\n교안 및 교육 콘텐츠 제작 역량 필수.\n평생교육 관련 자격 취득자 우대.";
+    jdInput.value = defaultJdExample;
 
     // Render Function
     function renderResult(data, isSample = false) {
@@ -407,6 +442,25 @@
       } else {
         dashboardModeBadge.textContent = "실시간 분석 완료";
         dashboardModeBadge.className = "text-xs font-bold bg-toss-lightBlue text-toss-blue px-2.5 py-1 rounded-full";
+      }
+
+      // Render JD Matching Card
+      const jdMatchCard = document.getElementById('jdMatchCard');
+      const jdMatchRate = document.getElementById('jdMatchRate');
+      const jdMatchProgress = document.getElementById('jdMatchProgress');
+      const jdMatchReason = document.getElementById('jdMatchReason');
+
+      if (data.match_rate) {
+        jdMatchCard.classList.remove('hidden');
+        jdMatchRate.textContent = data.match_rate;
+        const pct = parseInt(data.match_rate.replace(/[^0-9]/g, '')) || 0;
+        jdMatchProgress.style.width = `${pct}%`;
+        jdMatchReason.textContent = data.match_reason || '분석 이유 요약이 제공되지 않았습니다.';
+      } else {
+        // Fallback when matching is bypassed
+        jdMatchRate.textContent = '0%';
+        jdMatchProgress.style.width = '0%';
+        jdMatchReason.textContent = '직무 기술서 요건이 입력되지 않았거나 대조되지 않았습니다.';
       }
 
       document.getElementById('resName').textContent = data.name || '-';
@@ -584,7 +638,6 @@
       }
     });
 
-    // 지원되는 확장자 목록 검증 스크립트 업데이트
     function handleFileSelect(file) {
       const fileName = file.name;
       const ext = fileName.split('.').pop().toLowerCase();
@@ -617,6 +670,7 @@
     }
 
     resetDemoBtn.addEventListener('click', () => {
+      jdInput.value = defaultJdExample;
       renderResult(sampleData, true);
     });
 
@@ -626,6 +680,7 @@
 
       const formData = new FormData();
       formData.append('resume', selectedFile);
+      formData.append('jdText', jdInput.value); // JD 데이터 전송 추가
 
       processingCard.classList.remove('hidden');
       setStepState(1, 'active', '이력서 파일 업로드 및 분석 요청 중...');
@@ -644,8 +699,8 @@
         });
 
         setStepState(2, 'done', '로컬 개인정보 마스킹 완료 (전화/이메일/주소 차단)');
-        setStepState(3, 'active', 'Gemini AI 커리어 구조화 분석 중...');
-        updateProgress(75, 'Gemini 2.5 Flash를 이용한 공백기 산출 및 맞춤 질문 도출 중...');
+        setStepState(3, 'active', 'Gemini AI 커리어 구조화 및 JD 대조 분석 중...');
+        updateProgress(75, 'Gemini 2.5 Flash를 이용한 매칭도 연산 및 공백기 산출 중...');
 
         const result = await response.json();
 
@@ -653,7 +708,7 @@
           throw new Error(result.error || '이력서 분석에 실패했습니다.');
         }
 
-        setStepState(3, 'done', 'Gemini API 커리어 데이터 구조화 성공');
+        setStepState(3, 'done', 'Gemini API 직무 매칭 및 데이터 구조화 성공');
         updateProgress(100, '모든 분석이 완료되었습니다!');
         
         setTimeout(() => {
