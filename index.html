@@ -1855,22 +1855,36 @@
       const candidate = job.matrixResults[index];
       if (!candidate) return;
 
+      // 🔍 단일 지원자 심층 분석 탭으로 강제 이동
       tabSingleBtn.click();
       
+      // 과거에 분석해 둔 단일 심층 리포트 데이터(singleResult)가 존재하고,
+      // 클릭한 후보자의 이름과 일치할 경우 실제 저장된 리포트를 그대로 완벽히 복원합니다.
+      if (job.singleResult && job.singleResult.name === candidate.name) {
+        renderSingleReport(job.singleResult);
+        pdfBtnSingle.style.display = "inline-flex";
+        return;
+      }
+
+      // 만약 다중 매트릭스 목록에서 복원해 올 때, 해당 후보자에 대한 단일 상세 데이터가 없다면
+      // 매트릭스 정보를 가공하여 깔끔한 형태로 모조 렌더링합니다.
       const mappedSingle = {
         name: candidate.name,
-        age: "출생연도 확인필요",
-        location: "과거 저장 기록",
+        age: "-",
+        location: "미기재",
         total_experience: candidate.total_experience,
         average_tenure: candidate.average_tenure,
         match_rate: candidate.match_rate,
         match_reason: candidate.summary,
-        skills: candidate.skills,
+        skills: candidate.skills || [],
         certifications: [],
         career_summary: [],
-        interview_questions: ["복원된 분석 기록입니다. 상세 타임라인 및 공백기 검증을 위해 이력서 파일을 단일 분석 탭에 다시 업로드해 주세요."]
+        interview_questions: [
+          "해당 지원자의 상세 타임라인 및 면접 질문을 자동 생성하려면, 이력서 파일을 단일 지원자 심층 분석 탭에 새로 업로드하여 분석을 재실행해 주세요."
+        ]
       };
       renderSingleReport(mappedSingle);
+      pdfBtnSingle.style.display = "inline-flex";
     };
 
     // 초기화 분기 함수 (Case A / Case B 버그 수정)
