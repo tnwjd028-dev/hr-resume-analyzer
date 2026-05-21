@@ -144,7 +144,7 @@ function parseHwp(buffer) {
  * @param {number} retries 남은 재시도 횟수
  * @param {number} delay 대기 간격 (ms)
  */
-async function generateContentWithRetry(ai, params, retries = 3, delay = 1500) {
+async function generateContentWithRetry(ai, params, retries = 5, delay = 3000) {
   try {
     return await ai.models.generateContent(params);
   } catch (err) {
@@ -155,7 +155,11 @@ async function generateContentWithRetry(ai, params, retries = 3, delay = 1500) {
       errMsg.includes('429') || 
       errMsg.includes('RESOURCE_EXHAUSTED') ||
       errMsg.includes('high demand') ||
-      errMsg.includes('temporary');
+      errMsg.includes('temporary') ||
+      err.status === 429 ||
+      err.statusCode === 429 ||
+      (err.status && err.status.toString().includes('429')) ||
+      (err.status && err.status.toString().includes('503'));
 
     if (isTransientError && retries > 0) {
       console.warn(`[WARN] Gemini API 일시적 오류 감지. ${delay}ms 후 재시도합니다... (남은 횟수: ${retries}회, 원인: ${errMsg.substring(0, 60)})`);
@@ -315,7 +319,7 @@ ${maskedText}
 
     const ai = new GoogleGenAI({ apiKey });
     const response = await generateContentWithRetry(ai, {
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.0-flash',
       contents: systemPrompt,
       config: {
         responseMimeType: 'application/json',
@@ -382,7 +386,7 @@ app.post('/api/analyze/matrix', upload.array('resumes', 20), async (req, res) =>
       const fileName = file.originalname;
 
       if (i > 0) {
-        await sleep(800); // 800ms Throttle 딜레이
+        await sleep(2000); // 2000ms Throttle 딜레이
       }
 
       try {
@@ -420,7 +424,7 @@ ${maskedText}
 `;
 
         const response = await generateContentWithRetry(ai, {
-          model: 'gemini-2.5-flash',
+          model: 'gemini-2.0-flash',
           contents: systemPrompt,
           config: {
             responseMimeType: 'application/json',
